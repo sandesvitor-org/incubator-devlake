@@ -25,6 +25,7 @@ import (
 	"github.com/apache/incubator-devlake/core/dal"
 	"github.com/apache/incubator-devlake/core/errors"
 	"github.com/apache/incubator-devlake/core/plugin"
+	helper "github.com/apache/incubator-devlake/helpers/pluginhelper/api"
 	"github.com/apache/incubator-devlake/plugins/opsgenie/api"
 	"github.com/apache/incubator-devlake/plugins/opsgenie/models"
 	"github.com/apache/incubator-devlake/plugins/opsgenie/models/migrationscripts"
@@ -82,16 +83,15 @@ func (p Opsgenie) GetTablesInfo() []dal.Tabler {
 	return []dal.Tabler{
 		&models.OpsgenieConnection{},
 		&models.Service{},
-		&models.Alert{},
-		&models.User{},
+		&models.Incident{},
 	}
 }
 
 func (p Opsgenie) SubTaskMetas() []plugin.SubTaskMeta {
 	return []plugin.SubTaskMeta{
-		tasks.CollectAlertsMeta,
-		tasks.ExtractAlertsMeta,
-		tasks.ConvertAlertsMeta,
+		tasks.CollectIncidentsMeta,
+		tasks.ExtractIncidentsMeta,
+		tasks.ConvertIncidentsMeta,
 		tasks.ConvertServicesMeta,
 	}
 }
@@ -101,7 +101,7 @@ func (p Opsgenie) PrepareTaskData(taskCtx plugin.TaskContext, options map[string
 	if err != nil {
 		return nil, err
 	}
-	connectionHelper := api.NewConnectionHelper(
+	connectionHelper := helper.NewConnectionHelper(
 		taskCtx,
 		nil,
 		p.Name(),
@@ -119,13 +119,13 @@ func (p Opsgenie) PrepareTaskData(taskCtx plugin.TaskContext, options map[string
 		}
 		timeAfter = &convertedTime
 	}
-	client, err := api.NewApiClient(taskCtx.GetContext(), connection.Endpoint, map[string]string{
+	client, err := helper.NewApiClient(taskCtx.GetContext(), connection.Endpoint, map[string]string{
 		"Authorization": fmt.Sprintf("GenieKey %s", connection.Token),
 	}, 0, connection.Proxy, taskCtx)
 	if err != nil {
 		return nil, err
 	}
-	asyncClient, err := api.CreateAsyncApiClient(taskCtx, client, nil)
+	asyncClient, err := helper.CreateAsyncApiClient(taskCtx, client, nil)
 	if err != nil {
 		return nil, err
 	}

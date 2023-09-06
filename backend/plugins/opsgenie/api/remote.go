@@ -122,8 +122,6 @@ func RemoteScopes(input *plugin.ApiResourceInput) (*plugin.ApiResourceOutput, er
 		return nil, err
 	}
 
-	fmt.Println(response)
-
 	// append service to output
 	for _, service := range response.Data {
 		child := RemoteScopesChild{
@@ -138,8 +136,6 @@ func RemoteScopes(input *plugin.ApiResourceInput) (*plugin.ApiResourceOutput, er
 		}
 		outputBody.Children = append(outputBody.Children, child)
 	}
-
-	fmt.Println(outputBody)
 
 	return &plugin.ApiResourceOutput{Body: outputBody, Status: http.StatusOK}, nil
 }

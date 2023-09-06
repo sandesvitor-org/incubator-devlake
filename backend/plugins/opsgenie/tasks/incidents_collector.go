@@ -32,46 +32,40 @@ import (
 	"github.com/apache/incubator-devlake/plugins/opsgenie/models"
 )
 
-const RAW_ALERTS_TABLE = "opsgenie_alerts"
+const RAW_INCIDENTS_TABLE = "opsgenie_incidents"
 
-var _ plugin.SubTaskEntryPoint = CollectAlerts
+var _ plugin.SubTaskEntryPoint = CollectIncidents
 
 type (
-	pagingInfo struct {
-		Limit      *int `json:"limit"`
-		Offset     *int `json:"offset"`
-		TotalCount *int `json:"totalCount"`
-	}
-	collectedAlerts struct {
-		pagingInfo
-		Alerts []json.RawMessage `json:"alerts"`
+	collectedIncidents struct {
+		TotalCount int               `json:"totalCount"`
+		Data       []json.RawMessage `json:"data"`
 	}
 
-	collectedAlert struct {
-		pagingInfo
-		Alert json.RawMessage `json:"alert"`
+	collectedIncident struct {
+		Data json.RawMessage `json:"data"`
 	}
-	simplifiedRawAlert struct {
-		Id        int       `json:"id"`
+	simplifiedRawIncident struct {
+		Id        string    `json:"id"`
 		CreatedAt time.Time `json:"created_at"`
 	}
 )
 
-var CollectAlertsMeta = plugin.SubTaskMeta{
-	Name:             "collectAlerts",
-	EntryPoint:       CollectAlerts,
+var CollectIncidentsMeta = plugin.SubTaskMeta{
+	Name:             "collectIncidents",
+	EntryPoint:       CollectIncidents,
 	EnabledByDefault: true,
-	Description:      "Collect Opsgenie alerts",
+	Description:      "Collect Opsgenie incidents",
 	DomainTypes:      []string{plugin.DOMAIN_TYPE_TICKET},
 }
 
-func CollectAlerts(taskCtx plugin.SubTaskContext) errors.Error {
+func CollectIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 	data := taskCtx.GetData().(*OpsgenieTaskData)
 	db := taskCtx.GetDal()
 	args := api.RawDataSubTaskArgs{
 		Ctx:     taskCtx,
 		Options: data.Options,
-		Table:   RAW_ALERTS_TABLE,
+		Table:   RAW_INCIDENTS_TABLE,
 	}
 	collector, err := api.NewStatefulApiCollectorForFinalizableEntity(api.FinalizableApiCollectorArgs{
 		RawDataSubTaskArgs: args,
@@ -79,12 +73,19 @@ func CollectAlerts(taskCtx plugin.SubTaskContext) errors.Error {
 		TimeAfter:          data.TimeAfter,
 		CollectNewRecordsByList: api.FinalizableApiCollectorListArgs{
 			PageSize: 100,
+			GetNextPageCustomData: func(prevReqData *api.RequestData, prevPageResponse *http.Response) (interface{}, errors.Error) {
+				pager := prevReqData.Pager
+				if pager.Skip+pager.Size >= 10_000 { // API limit. Can't exceed this or it'll error out
+					return nil, api.ErrFinishCollect
+				}
+				return nil, nil
+			},
 			FinalizableApiCollectorCommonArgs: api.FinalizableApiCollectorCommonArgs{
-				UrlTemplate: "v2/alerts",
+				UrlTemplate: "v1/incidents",
 				Query: func(reqData *api.RequestData, createdAfter *time.Time) (url.Values, errors.Error) {
 					query := url.Values{}
 
-					query.Set("query", fmt.Sprintf("details.key:impacted-services+details.value:%s", data.Options.ServiceId))
+					query.Set("query", fmt.Sprintf("impactedServices:%s", data.Options.ServiceId))
 					query.Set("sort", "createdAt")
 					query.Set("order", "desc")
 					query.Set("limit", fmt.Sprintf("%d", reqData.Pager.Size))
@@ -92,30 +93,32 @@ func CollectAlerts(taskCtx plugin.SubTaskContext) errors.Error {
 					return query, nil
 				},
 				ResponseParser: func(res *http.Response) ([]json.RawMessage, errors.Error) {
-					rawResult := collectedAlerts{}
+					rawResult := collectedIncidents{}
 					err := api.UnmarshalResponse(res, &rawResult)
-					return rawResult.Alerts, err
+
+					return rawResult.Data, err
 				},
 			},
 		},
 		CollectUnfinishedDetails: &api.FinalizableApiCollectorDetailArgs{
 			FinalizableApiCollectorCommonArgs: api.FinalizableApiCollectorCommonArgs{
 				// 2. "Input" here is the type: simplifiedRawAlert which is the element type of the returned iterator from BuildInputIterator
-				UrlTemplate: "v1/alerts/{{ .Input.Id }}",
+				UrlTemplate: "v1/incidents/{{ .Input.Id }}",
 				// 3. No custom query params/headers needed for this endpoint
 				Query: nil,
 				// 4. Parse the response for this endpoint call into a json.RawMessage
 				ResponseParser: func(res *http.Response) ([]json.RawMessage, errors.Error) {
-					rawResult := collectedAlert{}
+					rawResult := collectedIncident{}
 					err := api.UnmarshalResponse(res, &rawResult)
-					return []json.RawMessage{rawResult.Alert}, err
+
+					return []json.RawMessage{rawResult.Data}, err
 				},
 			},
 			BuildInputIterator: func() (api.Iterator, errors.Error) {
-				// 1. fetch individual "active/non-final" alerts from previous collections+extractions
+				// 1. fetch individual "active/non-final" incident from previous collections+extractions
 				cursor, err := db.Cursor(
-					dal.Select("id, created_date"),
-					dal.From(&models.Alert{}),
+					dal.Select("id, created_at"),
+					dal.From(&models.Incident{}),
 					dal.Where(
 						"service_id = ? AND connection_id = ? AND status != ?",
 						data.Options.ServiceId, data.Options.ConnectionId, "resolved",
@@ -124,7 +127,7 @@ func CollectAlerts(taskCtx plugin.SubTaskContext) errors.Error {
 				if err != nil {
 					return nil, err
 				}
-				return api.NewDalCursorIterator(db, cursor, reflect.TypeOf(simplifiedRawAlert{}))
+				return api.NewDalCursorIterator(db, cursor, reflect.TypeOf(simplifiedRawIncident{}))
 			},
 		},
 	})

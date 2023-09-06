@@ -32,8 +32,8 @@ type Incident struct {
 	Priority         *string    `json:"priority"`
 	OwnerTeam        *string    `json:"ownerTeam"`
 	Responders       *[]struct {
-		Type string `json:"type"`
-		Id   string `json:"id"`
+		Type *string `json:"type"`
+		Id   *string `json:"id"`
 	} `json:"responders"`
 	ExtraProperties struct {
 	} `json:"extraProperties"`
@@ -41,7 +41,5 @@ type Incident struct {
 		Web *string `json:"web"`
 		Api *string `json:"api"`
 	} `json:"links"`
-	ImpactStartDate time.Time `json:"impactStartDate"`
-	ImpactEndDate   time.Time `json:"impactEndDate"`
-	Actions         []any     `json:"actions"`
+	Actions *[]any `json:"actions"`
 }

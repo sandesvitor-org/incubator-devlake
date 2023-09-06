@@ -23,27 +23,21 @@ import (
 	"github.com/apache/incubator-devlake/core/models/migrationscripts/archived"
 )
 
-type Alert struct {
+type Incident struct {
 	archived.NoPKModel
-	ConnectionId   uint64 `gorm:"primaryKey"`
-	Id             string `gorm:"primaryKey"`
-	Url            string
-	IsSeen         bool
-	ServiceId      string
-	IncidentId     string
-	Message        string
-	Description    string
-	Name           string
-	Acknowledged   bool
-	AckTime        int
-	AcknowledgedBy string
-	Priority       string
-	Status         string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	LastOccurredAt time.Time
+	ConnectionId uint64 `gorm:"primaryKey"`
+	Id           string `gorm:"primaryKey"`
+	Url          string
+	ServiceId    string
+	Description  string
+	Message      string
+	OwnerTeam    string
+	Priority     string
+	Status       string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
-func (Alert) TableName() string {
-	return "_tool_opsgenie_alerts"
+func (Incident) TableName() string {
+	return "_tool_opsgenie_incidents"
 }

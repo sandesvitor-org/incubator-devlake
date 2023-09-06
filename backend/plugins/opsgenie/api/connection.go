@@ -19,7 +19,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/apache/incubator-devlake/core/errors"
@@ -35,7 +34,7 @@ func TestConnection(input *plugin.ApiResourceInput) (*plugin.ApiResourceOutput, 
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(connection)
+
 	apiClient, err := api.NewApiClientFromConnection(context.TODO(), basicRes, &connection)
 	if err != nil {
 		return nil, err

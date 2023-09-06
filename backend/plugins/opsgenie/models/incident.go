@@ -24,37 +24,31 @@ import (
 )
 
 const (
-	AlertStatusAcknowledged AlertStatus = "resolved"
-	AlertStatusTriggered    AlertStatus = "open"
-	AlertStatusResolved     AlertStatus = "closed"
+	IncidentStatusAcknowledged IncidentStatus = "resolved"
+	IncidentStatusTriggered    IncidentStatus = "open"
+	IncidentStatusResolved     IncidentStatus = "closed"
 )
 
 type (
-	AlertPriority string
-	AlertStatus   string
+	IncidentPriority string
+	IncidentStatus   string
 
-	Alert struct {
+	Incident struct {
 		common.NoPKModel
-		ConnectionId   uint64 `gorm:"primaryKey"`
-		Id             string `gorm:"primaryKey"`
-		Url            string
-		IsSeen         bool
-		ServiceId      string
-		IncidentId     string
-		Message        string
-		Description    string
-		Name           string
-		Acknowledged   bool
-		AckTime        int
-		AcknowledgedBy string
-		Priority       AlertPriority
-		Status         AlertStatus
-		CreatedAt      time.Time
-		UpdatedAt      time.Time
-		LastOccurredAt time.Time
+		ConnectionId uint64 `gorm:"primaryKey"`
+		Id           string `gorm:"primaryKey"`
+		Url          string
+		ServiceId    string
+		Description  string
+		Message      string
+		OwnerTeam    string
+		Priority     IncidentPriority
+		Status       IncidentStatus
+		CreatedAt    time.Time
+		UpdatedAt    time.Time
 	}
 )
 
-func (Alert) TableName() string {
-	return "_tool_opsgenie_alerts"
+func (Incident) TableName() string {
+	return "_tool_opsgenie_incidents"
 }

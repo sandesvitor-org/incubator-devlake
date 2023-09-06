@@ -79,10 +79,10 @@ func EncodeTaskOptions(op *OpsgenieOptions) (map[string]interface{}, errors.Erro
 
 func ValidateTaskOptions(op *OpsgenieOptions) errors.Error {
 	if op.ServiceName == "" {
-		return errors.BadInput.New("not enough info for Pagerduty execution")
+		return errors.BadInput.New("not enough info for Opsgenie execution")
 	}
 	if op.ServiceId == "" {
-		return errors.BadInput.New("not enough info for Pagerduty execution")
+		return errors.BadInput.New("not enough info for Opsgenie execution")
 	}
 	// find the needed GitHub now
 	if op.ConnectionId == 0 {

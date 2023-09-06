@@ -66,6 +66,9 @@ func ConvertIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 	}
 	defer cursor.Close()
 	seenIncidents := map[int]*IncidentWithUser{}
+
+	fmt.Println(seenIncidents)
+
 	idGen := didgen.NewDomainIdGenerator(&models.Incident{})
 	serviceIdGen := didgen.NewDomainIdGenerator(&models.Service{})
 	converter, err := api.NewDataConverter(api.DataConverterArgs{
