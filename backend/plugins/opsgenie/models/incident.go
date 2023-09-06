@@ -39,6 +39,7 @@ type (
 		Id           string `gorm:"primaryKey"`
 		Url          string
 		ServiceId    string
+		ServiceName  string
 		Description  string
 		Message      string
 		OwnerTeam    string

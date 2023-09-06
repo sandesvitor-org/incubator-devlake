@@ -60,6 +60,7 @@ func ExtractIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 				Url:          resolve(incidentRaw.Links.Web),
 				Message:      *incidentRaw.Message,
 				ServiceId:    data.Options.ServiceId,
+				ServiceName:  data.Options.ServiceName,
 				OwnerTeam:    resolve(incidentRaw.OwnerTeam),
 				Description:  resolve(incidentRaw.Description),
 				Status:       models.IncidentStatus(*incidentRaw.Status),

@@ -27,7 +27,7 @@ import (
 	"github.com/apache/incubator-devlake/core/models/domainlayer/ticket"
 	"github.com/apache/incubator-devlake/core/plugin"
 	helper "github.com/apache/incubator-devlake/helpers/pluginhelper/api"
-	"github.com/apache/incubator-devlake/plugins/pagerduty/models"
+	"github.com/apache/incubator-devlake/plugins/opsgenie/models"
 )
 
 var ConvertServicesMeta = plugin.SubTaskMeta{

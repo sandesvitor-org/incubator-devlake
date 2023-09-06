@@ -66,7 +66,7 @@ func makeDataSourcePipelinePlanV200(
 		if err != nil {
 			return nil, err
 		}
-		// construct task options for pagerduty
+		// construct task options for opsgenie
 		op := &tasks.OpsgenieOptions{
 			ConnectionId: service.ConnectionId,
 			ServiceId:    service.Id,

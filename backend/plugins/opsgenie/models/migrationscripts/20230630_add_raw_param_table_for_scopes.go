@@ -54,7 +54,7 @@ func (script *addRawParamTableForScope) Up(basicRes context.BasicRes) errors.Err
 		scope20230630{}.TableName(),
 		scope20230630{}.TableName(),
 		func(src *scope20230630) (*scope20230630, errors.Error) {
-			src.RawDataTable = "_raw_pagerduty_scopes"
+			src.RawDataTable = "_raw_opsgenie_scopes"
 			src.RawDataParams = string(errors.Must1(json.Marshal(&params20230630{
 				ConnectionId: src.ConnectionId,
 				ScopeId:      src.Id,
