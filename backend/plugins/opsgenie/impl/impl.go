@@ -18,11 +18,13 @@ limitations under the License.
 package impl
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/apache/incubator-devlake/core/context"
 	"github.com/apache/incubator-devlake/core/dal"
 	"github.com/apache/incubator-devlake/core/errors"
 	"github.com/apache/incubator-devlake/core/plugin"
-	"github.com/apache/incubator-devlake/helpers/pluginhelper/subtaskmeta/sorter"
 	"github.com/apache/incubator-devlake/plugins/opsgenie/api"
 	"github.com/apache/incubator-devlake/plugins/opsgenie/models"
 	"github.com/apache/incubator-devlake/plugins/opsgenie/models/migrationscripts"
@@ -45,11 +47,10 @@ var _ interface {
 
 type Opsgenie struct{}
 
-func init() {
-	// check subtask meta loop when init subtask meta
-	if _, err := sorter.NewDependencySorter(tasks.SubTaskMetaList).Sort(); err != nil {
-		panic(err)
-	}
+func (p Opsgenie) Init(basicRes context.BasicRes) errors.Error {
+	api.Init(basicRes, p)
+
+	return nil
 }
 
 func (p Opsgenie) Description() string {
@@ -73,12 +74,6 @@ func (p Opsgenie) ScopeConfig() dal.Tabler {
 	return nil
 }
 
-func (p Opsgenie) Init(basicRes context.BasicRes) errors.Error {
-	api.Init(basicRes, p)
-
-	return nil
-}
-
 func (p Opsgenie) Connection() dal.Tabler {
 	return &models.OpsgenieConnection{}
 }
@@ -87,15 +82,58 @@ func (p Opsgenie) GetTablesInfo() []dal.Tabler {
 	return []dal.Tabler{
 		&models.OpsgenieConnection{},
 		&models.Service{},
+		&models.Alert{},
+		&models.User{},
 	}
 }
 
 func (p Opsgenie) SubTaskMetas() []plugin.SubTaskMeta {
-	return nil
+	return []plugin.SubTaskMeta{
+		tasks.CollectAlertsMeta,
+		tasks.ExtractAlertsMeta,
+		tasks.ConvertAlertsMeta,
+		tasks.ConvertServicesMeta,
+	}
 }
 
 func (p Opsgenie) PrepareTaskData(taskCtx plugin.TaskContext, options map[string]interface{}) (interface{}, errors.Error) {
-	return nil, nil
+	op, err := tasks.DecodeAndValidateTaskOptions(options)
+	if err != nil {
+		return nil, err
+	}
+	connectionHelper := api.NewConnectionHelper(
+		taskCtx,
+		nil,
+		p.Name(),
+	)
+	connection := &models.OpsgenieConnection{}
+	err = connectionHelper.FirstById(connection, op.ConnectionId)
+	if err != nil {
+		return nil, errors.Default.Wrap(err, "unable to get Opsgenie connection by the given connection ID")
+	}
+	var timeAfter *time.Time
+	if op.TimeAfter != "" {
+		convertedTime, err := errors.Convert01(time.Parse(time.RFC3339, op.TimeAfter))
+		if err != nil {
+			return nil, errors.BadInput.Wrap(err, fmt.Sprintf("invalid value for `timeAfter`: %s", timeAfter))
+		}
+		timeAfter = &convertedTime
+	}
+	client, err := api.NewApiClient(taskCtx.GetContext(), connection.Endpoint, map[string]string{
+		"Authorization": fmt.Sprintf("GenieKey %s", connection.Token),
+	}, 0, connection.Proxy, taskCtx)
+	if err != nil {
+		return nil, err
+	}
+	asyncClient, err := api.CreateAsyncApiClient(taskCtx, client, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &tasks.OpsgenieTaskData{
+		Options:   op,
+		TimeAfter: timeAfter,
+		Client:    asyncClient,
+	}, nil
 }
 
 func (p Opsgenie) MigrationScripts() []plugin.MigrationScript {
@@ -103,6 +141,10 @@ func (p Opsgenie) MigrationScripts() []plugin.MigrationScript {
 }
 
 func (p Opsgenie) Close(taskCtx plugin.TaskContext) errors.Error {
+	_, ok := taskCtx.GetData().(*tasks.OpsgenieTaskData)
+	if !ok {
+		return errors.Default.New(fmt.Sprintf("GetData failed when try to close %+v", taskCtx))
+	}
 	return nil
 }
 
@@ -137,5 +179,5 @@ func (p Opsgenie) ApiResources() map[string]map[string]plugin.ApiResourceHandler
 
 func (p Opsgenie) MakeDataSourcePipelinePlanV200(connectionId uint64, scopes []*plugin.BlueprintScopeV200, syncPolicy plugin.BlueprintSyncPolicy,
 ) (plugin.PipelinePlan, []plugin.Scope, errors.Error) {
-	return nil, nil, nil
+	return api.MakeDataSourcePipelinePlanV200(p.SubTaskMetas(), connectionId, scopes, &syncPolicy)
 }

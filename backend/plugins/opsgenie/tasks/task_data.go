@@ -22,35 +22,32 @@ import (
 
 	"github.com/apache/incubator-devlake/core/errors"
 	"github.com/apache/incubator-devlake/helpers/pluginhelper/api"
-	"github.com/apache/incubator-devlake/plugins/pokemon/models"
+	"github.com/apache/incubator-devlake/plugins/opsgenie/models"
 )
 
-type PokemonApiParams struct {
+type OpsgenieOptions struct {
+	ConnectionId uint64   `json:"connectionId"`
+	TimeAfter    string   `json:"time_after,omitempty"`
+	ServiceId    string   `json:"service_id,omitempty"`
+	ServiceName  string   `json:"service_name,omitempty"`
+	Tasks        []string `json:"tasks,omitempty"`
+	*models.OpsenieScopeConfig
 }
 
-type PokemonOptions struct {
-	ConnectionId    uint64   `json:"connectionId"`
-	TimeAfter       string   `json:"time_after,omitempty"`
-	PokemonTypeName string   `json:"pokemon_type_name,omitempty"`
-	PokemonTypeId   string   `json:"pokemon_type_id,omitempty"`
-	Tasks           []string `json:"tasks,omitempty"`
-	*models.PokemonScopeConfig
-}
-
-type PokemonTaskData struct {
-	Options   *PokemonOptions
+type OpsgenieTaskData struct {
+	Options   *OpsgenieOptions
 	TimeAfter *time.Time
-	ApiClient api.RateLimitedApiClient
+	Client    api.RateLimitedApiClient
 }
 
-func (p *PokemonOptions) GetParams() any {
-	return models.PokemonParams{
+func (p *OpsgenieOptions) GetParams() any {
+	return models.OpsgenieParams{
 		ConnectionId: p.ConnectionId,
-		ScopeId:      p.PokemonTypeId,
+		ScopeId:      p.ServiceId,
 	}
 }
 
-func DecodeAndValidateTaskOptions(options map[string]interface{}) (*PokemonOptions, errors.Error) {
+func DecodeAndValidateTaskOptions(options map[string]interface{}) (*OpsgenieOptions, errors.Error) {
 	op, err := DecodeTaskOptions(options)
 	if err != nil {
 		return nil, err
@@ -62,8 +59,8 @@ func DecodeAndValidateTaskOptions(options map[string]interface{}) (*PokemonOptio
 	return op, nil
 }
 
-func DecodeTaskOptions(options map[string]interface{}) (*PokemonOptions, errors.Error) {
-	var op PokemonOptions
+func DecodeTaskOptions(options map[string]interface{}) (*OpsgenieOptions, errors.Error) {
+	var op OpsgenieOptions
 	err := api.Decode(options, &op, nil)
 	if err != nil {
 		return nil, err
@@ -71,7 +68,7 @@ func DecodeTaskOptions(options map[string]interface{}) (*PokemonOptions, errors.
 	return &op, nil
 }
 
-func EncodeTaskOptions(op *PokemonOptions) (map[string]interface{}, errors.Error) {
+func EncodeTaskOptions(op *OpsgenieOptions) (map[string]interface{}, errors.Error) {
 	var result map[string]interface{}
 	err := api.Decode(op, &result, nil)
 	if err != nil {
@@ -80,12 +77,12 @@ func EncodeTaskOptions(op *PokemonOptions) (map[string]interface{}, errors.Error
 	return result, nil
 }
 
-func ValidateTaskOptions(op *PokemonOptions) errors.Error {
-	if op.PokemonTypeName == "" {
-		return errors.BadInput.New("not enough info for pokemon execution")
+func ValidateTaskOptions(op *OpsgenieOptions) errors.Error {
+	if op.ServiceName == "" {
+		return errors.BadInput.New("not enough info for Pagerduty execution")
 	}
-	if op.PokemonTypeId == "" {
-		return errors.BadInput.New("not enough info for pokemon execution")
+	if op.ServiceId == "" {
+		return errors.BadInput.New("not enough info for Pagerduty execution")
 	}
 	// find the needed GitHub now
 	if op.ConnectionId == 0 {

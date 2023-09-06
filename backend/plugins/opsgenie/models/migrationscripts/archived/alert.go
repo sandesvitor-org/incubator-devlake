@@ -15,12 +15,35 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package tasks
+package archived
 
-import "github.com/apache/incubator-devlake/core/plugin"
+import (
+	"time"
 
-var SubTaskMetaList []*plugin.SubTaskMeta
+	"github.com/apache/incubator-devlake/core/models/migrationscripts/archived"
+)
 
-func RegisterSubtaskMeta(meta *plugin.SubTaskMeta) {
-	SubTaskMetaList = append(SubTaskMetaList, meta)
+type Alert struct {
+	archived.NoPKModel
+	ConnectionId   uint64 `gorm:"primaryKey"`
+	Id             string `gorm:"primaryKey"`
+	Url            string
+	IsSeen         bool
+	ServiceId      string
+	IncidentId     string
+	Message        string
+	Description    string
+	Name           string
+	Acknowledged   bool
+	AckTime        int
+	AcknowledgedBy string
+	Priority       string
+	Status         string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	LastOccurredAt time.Time
+}
+
+func (Alert) TableName() string {
+	return "_tool_opsgenie_alerts"
 }

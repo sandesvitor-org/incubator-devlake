@@ -20,37 +20,28 @@ package raw
 import "time"
 
 type Incident struct {
-	TotalCount int `json:"totalCount"`
-	Data       []struct {
-		Id               string    `json:"id"`
-		Description      string    `json:"description"`
-		ImpactedServices []string  `json:"impactedServices"`
-		TinyId           string    `json:"tinyId"`
-		Message          string    `json:"message"`
-		Status           string    `json:"status"`
-		Tags             []any     `json:"tags"`
-		CreatedAt        time.Time `json:"createdAt"`
-		UpdatedAt        time.Time `json:"updatedAt"`
-		Priority         string    `json:"priority"`
-		OwnerTeam        string    `json:"ownerTeam"`
-		Responders       []struct {
-			Type string `json:"type"`
-			Id   string `json:"id"`
-		} `json:"responders"`
-		ExtraProperties struct {
-		} `json:"extraProperties"`
-		Links struct {
-			Web string `json:"web"`
-			API string `json:"api"`
-		} `json:"links"`
-		ImpactStartDate time.Time `json:"impactStartDate"`
-		ImpactEndDate   time.Time `json:"impactEndDate"`
-		Actions         []any     `json:"actions"`
-	} `json:"data"`
-	Paging struct {
-		First string `json:"first"`
-		Last  string `json:"last"`
-	} `json:"paging"`
-	Took      float64 `json:"took"`
-	RequestID string  `json:"requestId"`
+	Id               *string    `json:"id"`
+	Description      *string    `json:"description"`
+	ImpactedServices *[]string  `json:"impactedServices"`
+	TinyId           *string    `json:"tinyId"`
+	Message          *string    `json:"message"`
+	Status           *string    `json:"status"`
+	Tags             []any      `json:"tags"`
+	CreatedAt        *time.Time `json:"createdAt"`
+	UpdatedAt        *time.Time `json:"updatedAt"`
+	Priority         *string    `json:"priority"`
+	OwnerTeam        *string    `json:"ownerTeam"`
+	Responders       *[]struct {
+		Type string `json:"type"`
+		Id   string `json:"id"`
+	} `json:"responders"`
+	ExtraProperties struct {
+	} `json:"extraProperties"`
+	Links struct {
+		Web *string `json:"web"`
+		Api *string `json:"api"`
+	} `json:"links"`
+	ImpactStartDate time.Time `json:"impactStartDate"`
+	ImpactEndDate   time.Time `json:"impactEndDate"`
+	Actions         []any     `json:"actions"`
 }
