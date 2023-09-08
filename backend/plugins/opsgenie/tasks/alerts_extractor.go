@@ -19,7 +19,6 @@ package tasks
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/apache/incubator-devlake/core/errors"
 	"github.com/apache/incubator-devlake/core/plugin"
@@ -48,15 +47,10 @@ func ExtractAlerts(taskCtx plugin.SubTaskContext) errors.Error {
 		},
 		Extract: func(row *api.RawData) ([]interface{}, errors.Error) {
 			alertRaw := &raw.Alert{}
-
 			err := errors.Convert(json.Unmarshal(row.Data, alertRaw))
 			if err != nil {
 				return nil, err
 			}
-
-			fmt.Println("")
-			fmt.Println(string(row.Data))
-			fmt.Println("")
 			results := make([]interface{}, 0, 1)
 			alert := models.Alert{
 				ConnectionId:   data.Options.ConnectionId,
@@ -64,7 +58,6 @@ func ExtractAlerts(taskCtx plugin.SubTaskContext) errors.Error {
 				Message:        *alertRaw.Message,
 				ServiceId:      data.Options.ServiceId,
 				ServiceName:    data.Options.ServiceName,
-				IncidentId:     resolve(alertRaw.Details.IncidentId), // may not be associated with an Incident
 				Owner:          resolve(alertRaw.Owner),
 				Description:    resolve(alertRaw.Description),
 				AckTime:        resolve(alertRaw.Report.AckTime),

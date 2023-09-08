@@ -68,7 +68,7 @@ func ConvertIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 					Id: idGen.Generate(data.Options.ConnectionId, incident.Id),
 				},
 				Url:             incident.Url,
-				IssueKey:        incident.Message,
+				IssueKey:        incident.Id,
 				Description:     incident.Description,
 				Type:            ticket.INCIDENT,
 				Status:          status,

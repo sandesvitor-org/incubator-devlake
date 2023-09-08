@@ -41,7 +41,6 @@ type (
 		Snoozed        bool
 		ServiceId      string
 		ServiceName    string
-		IncidentId     string
 		Description    string
 		Message        string
 		Owner          string

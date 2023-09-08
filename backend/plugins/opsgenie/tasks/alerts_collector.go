@@ -102,35 +102,16 @@ func CollectAlerts(taskCtx plugin.SubTaskContext) errors.Error {
 				},
 			},
 		},
-		// dal.Select("pi.*, pu.*, pa.assigned_at"),
-		// dal.From("_tool_pagerduty_incidents AS pi"),
-		// dal.Join(`LEFT JOIN _tool_pagerduty_assignments AS pa ON pa.incident_number = pi.number`),
-		// dal.Join(`LEFT JOIN _tool_pagerduty_users AS pu ON pa.user_id = pu.id`),
-		// dal.Where("pi.connection_id = ? AND pi.service_id = ?", data.Options.ConnectionId, data.Options.ServiceId),
 		CollectUnfinishedDetails: &api.FinalizableApiCollectorDetailArgs{
 			BuildInputIterator: func() (api.Iterator, errors.Error) {
-				fmt.Printf("\n### DENTRO DE BuildInputIterator\n")
 				cursor, err := db.Cursor(
 					dal.Select("id"),
 					dal.From(&models.Alert{}),
-					// dal.Where(
-					// 	"service_id = ? AND connection_id = ?",
-					// 	data.Options.ServiceId, data.Options.ConnectionId,
-					// ),
+					dal.Where(
+						"service_id = ? AND connection_id = ? AND status != ?",
+						data.Options.ServiceId, data.Options.ConnectionId, "closed",
+					),
 				)
-
-				fmt.Println(cursor.Columns())
-				fmt.Println(cursor)
-				fmt.Println(err)
-				// cursor, err := db.Cursor(
-				// 	dal.Select("id, created_at"),
-				// 	dal.From(&models.Alert{}),
-				// 	dal.Where(
-				// 		"service_id = ? AND connection_id = ? AND status != ?",
-				// 		data.Options.ServiceId, data.Options.ConnectionId, "closed",
-				// 	),
-				// )
-
 				if err != nil {
 					return nil, err
 				}
@@ -140,7 +121,6 @@ func CollectAlerts(taskCtx plugin.SubTaskContext) errors.Error {
 				UrlTemplate: "v2/alerts/{{ .Input.Id }}",
 				Query:       nil,
 				ResponseParser: func(res *http.Response) ([]json.RawMessage, errors.Error) {
-					fmt.Printf("\nDENTRO DO FinalizableApiCollectorCommonArgs.ResponseParser\n")
 					rawResult := collectedAlert{}
 					err := api.UnmarshalResponse(res, &rawResult)
 					return []json.RawMessage{rawResult.Data}, err
