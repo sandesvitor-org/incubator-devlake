@@ -92,6 +92,9 @@ func (p Opsgenie) SubTaskMetas() []plugin.SubTaskMeta {
 		tasks.CollectIncidentsMeta,
 		tasks.ExtractIncidentsMeta,
 		tasks.ConvertIncidentsMeta,
+		tasks.CollectAlertsMeta,
+		tasks.ExtractAlertsMeta,
+		tasks.ConvertAlertMeta,
 		tasks.ConvertServicesMeta,
 	}
 }

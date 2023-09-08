@@ -32,40 +32,42 @@ import (
 	"github.com/apache/incubator-devlake/plugins/opsgenie/models"
 )
 
-const RAW_INCIDENTS_TABLE = "opsgenie_incidents"
+const RAW_ALERTS_TABLE = "opsgenie_alerts"
 
-var _ plugin.SubTaskEntryPoint = CollectIncidents
+var _ plugin.SubTaskEntryPoint = CollectAlerts
 
 type (
-	collectedIncidents struct {
+	collectedAlerts struct {
 		TotalCount int               `json:"totalCount"`
 		Data       []json.RawMessage `json:"data"`
 	}
 
-	collectedIncident struct {
-		Data json.RawMessage `json:"data"`
+	collectedAlert struct {
+		Data      json.RawMessage `json:"data"`
+		Took      float64         `json:"took"`
+		RequestId string          `json:"requestId"`
 	}
-	simplifiedRawIncident struct {
+	simplifiedRawAlert struct {
 		Id        string    `json:"id"`
 		CreatedAt time.Time `json:"created_at"`
 	}
 )
 
-var CollectIncidentsMeta = plugin.SubTaskMeta{
-	Name:             "collectIncidents",
-	EntryPoint:       CollectIncidents,
+var CollectAlertsMeta = plugin.SubTaskMeta{
+	Name:             "collectAlerts",
+	EntryPoint:       CollectAlerts,
 	EnabledByDefault: true,
-	Description:      "Collect Opsgenie incidents",
+	Description:      "Collect Opsgenie alerts",
 	DomainTypes:      []string{plugin.DOMAIN_TYPE_TICKET},
 }
 
-func CollectIncidents(taskCtx plugin.SubTaskContext) errors.Error {
+func CollectAlerts(taskCtx plugin.SubTaskContext) errors.Error {
 	data := taskCtx.GetData().(*OpsgenieTaskData)
 	db := taskCtx.GetDal()
 	args := api.RawDataSubTaskArgs{
 		Ctx:     taskCtx,
 		Options: data.Options,
-		Table:   RAW_INCIDENTS_TABLE,
+		Table:   RAW_ALERTS_TABLE,
 	}
 	collector, err := api.NewStatefulApiCollectorForFinalizableEntity(api.FinalizableApiCollectorArgs{
 		RawDataSubTaskArgs: args,
@@ -73,12 +75,19 @@ func CollectIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 		TimeAfter:          data.TimeAfter,
 		CollectNewRecordsByList: api.FinalizableApiCollectorListArgs{
 			PageSize: 100,
+			GetNextPageCustomData: func(prevReqData *api.RequestData, prevPageResponse *http.Response) (interface{}, errors.Error) {
+				pager := prevReqData.Pager
+				if pager.Skip+pager.Size >= 20_000 { // API limit. Can't exceed this or it'll error out
+					return nil, api.ErrFinishCollect
+				}
+				return nil, nil
+			},
 			FinalizableApiCollectorCommonArgs: api.FinalizableApiCollectorCommonArgs{
-				UrlTemplate: "v1/incidents",
+				UrlTemplate: "v2/alerts",
 				Query: func(reqData *api.RequestData, createdAfter *time.Time) (url.Values, errors.Error) {
 					query := url.Values{}
 
-					query.Set("query", fmt.Sprintf("impactedServices:%s", data.Options.ServiceId))
+					query.Set("query", fmt.Sprintf("detailsPair(impacted-services:%s)", data.Options.ServiceId))
 					query.Set("sort", "createdAt")
 					query.Set("order", "desc")
 					query.Set("limit", fmt.Sprintf("%d", reqData.Pager.Size))
@@ -86,41 +95,56 @@ func CollectIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 					return query, nil
 				},
 				ResponseParser: func(res *http.Response) ([]json.RawMessage, errors.Error) {
-					rawResult := collectedIncidents{}
+					rawResult := collectedAlerts{}
 					err := api.UnmarshalResponse(res, &rawResult)
 
 					return rawResult.Data, err
 				},
 			},
 		},
+		// dal.Select("pi.*, pu.*, pa.assigned_at"),
+		// dal.From("_tool_pagerduty_incidents AS pi"),
+		// dal.Join(`LEFT JOIN _tool_pagerduty_assignments AS pa ON pa.incident_number = pi.number`),
+		// dal.Join(`LEFT JOIN _tool_pagerduty_users AS pu ON pa.user_id = pu.id`),
+		// dal.Where("pi.connection_id = ? AND pi.service_id = ?", data.Options.ConnectionId, data.Options.ServiceId),
 		CollectUnfinishedDetails: &api.FinalizableApiCollectorDetailArgs{
-			FinalizableApiCollectorCommonArgs: api.FinalizableApiCollectorCommonArgs{
-				// 2. "Input" here is the type: simplifiedRawAlert which is the element type of the returned iterator from BuildInputIterator
-				UrlTemplate: "v1/incidents/{{ .Input.Id }}",
-				// 3. No custom query params/headers needed for this endpoint
-				Query: nil,
-				// 4. Parse the response for this endpoint call into a json.RawMessage
-				ResponseParser: func(res *http.Response) ([]json.RawMessage, errors.Error) {
-					rawResult := collectedIncident{}
-					err := api.UnmarshalResponse(res, &rawResult)
-
-					return []json.RawMessage{rawResult.Data}, err
-				},
-			},
 			BuildInputIterator: func() (api.Iterator, errors.Error) {
-				// 1. fetch individual "active/non-final" incident from previous collections+extractions
+				fmt.Printf("\n### DENTRO DE BuildInputIterator\n")
 				cursor, err := db.Cursor(
-					dal.Select("id, created_at"),
-					dal.From(&models.Incident{}),
-					dal.Where(
-						"service_id = ? AND connection_id = ? AND status != ?",
-						data.Options.ServiceId, data.Options.ConnectionId, "resolved",
-					),
+					dal.Select("id"),
+					dal.From(&models.Alert{}),
+					// dal.Where(
+					// 	"service_id = ? AND connection_id = ?",
+					// 	data.Options.ServiceId, data.Options.ConnectionId,
+					// ),
 				)
+
+				fmt.Println(cursor.Columns())
+				fmt.Println(cursor)
+				fmt.Println(err)
+				// cursor, err := db.Cursor(
+				// 	dal.Select("id, created_at"),
+				// 	dal.From(&models.Alert{}),
+				// 	dal.Where(
+				// 		"service_id = ? AND connection_id = ? AND status != ?",
+				// 		data.Options.ServiceId, data.Options.ConnectionId, "closed",
+				// 	),
+				// )
+
 				if err != nil {
 					return nil, err
 				}
-				return api.NewDalCursorIterator(db, cursor, reflect.TypeOf(simplifiedRawIncident{}))
+				return api.NewDalCursorIterator(db, cursor, reflect.TypeOf(simplifiedRawAlert{}))
+			},
+			FinalizableApiCollectorCommonArgs: api.FinalizableApiCollectorCommonArgs{
+				UrlTemplate: "v2/alerts/{{ .Input.Id }}",
+				Query:       nil,
+				ResponseParser: func(res *http.Response) ([]json.RawMessage, errors.Error) {
+					fmt.Printf("\nDENTRO DO FinalizableApiCollectorCommonArgs.ResponseParser\n")
+					rawResult := collectedAlert{}
+					err := api.UnmarshalResponse(res, &rawResult)
+					return []json.RawMessage{rawResult.Data}, err
+				},
 			},
 		},
 	})

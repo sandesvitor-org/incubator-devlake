@@ -19,6 +19,7 @@ package tasks
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/apache/incubator-devlake/core/errors"
 	"github.com/apache/incubator-devlake/core/plugin"
@@ -27,49 +28,55 @@ import (
 	"github.com/apache/incubator-devlake/plugins/opsgenie/models/raw"
 )
 
-var _ plugin.SubTaskEntryPoint = ExtractIncidents
+var _ plugin.SubTaskEntryPoint = ExtractAlerts
 
-var ExtractIncidentsMeta = plugin.SubTaskMeta{
-	Name:             "extractIncidents",
-	EntryPoint:       ExtractIncidents,
+var ExtractAlertsMeta = plugin.SubTaskMeta{
+	Name:             "extractAlerts",
+	EntryPoint:       ExtractAlerts,
 	EnabledByDefault: true,
-	Description:      "Extract Opsgenie incidents",
+	Description:      "Extract Opsgenie alerts",
 	DomainTypes:      []string{plugin.DOMAIN_TYPE_TICKET},
 }
 
-func ExtractIncidents(taskCtx plugin.SubTaskContext) errors.Error {
+func ExtractAlerts(taskCtx plugin.SubTaskContext) errors.Error {
 	data := taskCtx.GetData().(*OpsgenieTaskData)
 	extractor, err := api.NewApiExtractor(api.ApiExtractorArgs{
 		RawDataSubTaskArgs: api.RawDataSubTaskArgs{
 			Ctx:     taskCtx,
 			Options: data.Options,
-			Table:   RAW_INCIDENTS_TABLE,
+			Table:   RAW_ALERTS_TABLE,
 		},
 		Extract: func(row *api.RawData) ([]interface{}, errors.Error) {
-			incidentRaw := &raw.Incident{}
+			alertRaw := &raw.Alert{}
 
-			err := errors.Convert(json.Unmarshal(row.Data, incidentRaw))
+			err := errors.Convert(json.Unmarshal(row.Data, alertRaw))
 			if err != nil {
 				return nil, err
 			}
 
+			fmt.Println("")
+			fmt.Println(string(row.Data))
+			fmt.Println("")
 			results := make([]interface{}, 0, 1)
-			incident := models.Incident{
-				ConnectionId: data.Options.ConnectionId,
-				Id:           *incidentRaw.Id,
-				Url:          resolve(incidentRaw.Links.Web),
-				Message:      *incidentRaw.Message,
-				ServiceId:    data.Options.ServiceId,
-				ServiceName:  data.Options.ServiceName,
-				OwnerTeam:    resolve(incidentRaw.OwnerTeam),
-				Description:  resolve(incidentRaw.Description),
-				Status:       models.IncidentStatus(*incidentRaw.Status),
-				Priority:     models.IncidentPriority(*incidentRaw.Priority),
-				CreatedAt:    *incidentRaw.CreatedAt,
-				UpdatedAt:    *incidentRaw.UpdatedAt,
+			alert := models.Alert{
+				ConnectionId:   data.Options.ConnectionId,
+				Id:             *alertRaw.Id,
+				Message:        *alertRaw.Message,
+				ServiceId:      data.Options.ServiceId,
+				ServiceName:    data.Options.ServiceName,
+				IncidentId:     resolve(alertRaw.Details.IncidentId), // may not be associated with an Incident
+				Owner:          resolve(alertRaw.Owner),
+				Description:    resolve(alertRaw.Description),
+				AckTime:        resolve(alertRaw.Report.AckTime),
+				AcknowledgedBy: resolve(alertRaw.Report.AcknowledgedBy),
+				CloseTime:      resolve(alertRaw.Report.CloseTime),
+				ClosedBy:       resolve(alertRaw.Report.ClosedBy),
+				Status:         models.AlertStatus(*alertRaw.Status),
+				Priority:       models.AlertPriority(*alertRaw.Priority),
+				CreatedAt:      *alertRaw.CreatedAt,
+				UpdatedAt:      *alertRaw.UpdatedAt,
 			}
-			results = append(results, &incident)
-
+			results = append(results, &alert)
 			return results, nil
 		},
 	})

@@ -376,6 +376,10 @@ func UnmarshalResponse(res *http.Response, v interface{}) errors.Error {
 	if err != nil {
 		return errors.Default.Wrap(err, fmt.Sprintf("error reading response from %s", res.Request.URL.String()))
 	}
+	// fmt.Println(string(resBody))
+	// fmt.Println(resBody)
+	// fmt.Println(len(resBody))
+
 	if len(resBody) == 0 {
 		return ErrEmptyResponse
 	}

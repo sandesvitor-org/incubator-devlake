@@ -46,7 +46,9 @@ type Alert struct {
 	} `json:"responders"`
 	Report struct {
 		AckTime        *int    `json:"ackTime"`
+		CloseTime      *int    `json:"closeTime"`
 		AcknowledgedBy *string `json:"acknowledgedBy"`
+		ClosedBy       *string `json:"closedBy"`
 	} `json:"report"`
 	OwnerTeamId string  `json:"ownerTeamId"`
 	Actions     []any   `json:"actions"`

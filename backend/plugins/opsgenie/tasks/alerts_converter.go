@@ -31,53 +31,55 @@ import (
 	"github.com/apache/incubator-devlake/plugins/opsgenie/models"
 )
 
-var ConvertIncidentsMeta = plugin.SubTaskMeta{
-	Name:             "convertIncidents",
-	EntryPoint:       ConvertIncidents,
+var ConvertAlertMeta = plugin.SubTaskMeta{
+	Name:             "convertAlert",
+	EntryPoint:       ConvertAlert,
 	EnabledByDefault: true,
-	Description:      "Convert Incidents into domain layer table issues",
+	Description:      "Convert Alert into domain layer table issues",
 	DomainTypes:      []string{plugin.DOMAIN_TYPE_TICKET},
 }
 
-func ConvertIncidents(taskCtx plugin.SubTaskContext) errors.Error {
+func ConvertAlert(taskCtx plugin.SubTaskContext) errors.Error {
 	db := taskCtx.GetDal()
 	data := taskCtx.GetData().(*OpsgenieTaskData)
 
-	cursor, err := db.Cursor(dal.From(models.Incident{}), dal.Where("connection_id = ? AND service_id = ?", data.Options.ConnectionId, data.Options.ServiceId))
+	cursor, err := db.Cursor(
+		dal.From(models.Alert{}),
+		dal.Where("connection_id = ? AND service_id = ?", data.Options.ConnectionId, data.Options.ServiceId),
+	)
 	if err != nil {
 		return err
 	}
 	defer cursor.Close()
 
-	idGen := didgen.NewDomainIdGenerator(&models.Incident{})
+	idGen := didgen.NewDomainIdGenerator(&models.Alert{})
 	serviceIdGen := didgen.NewDomainIdGenerator(&models.Service{})
 	converter, err := api.NewDataConverter(api.DataConverterArgs{
 		RawDataSubTaskArgs: api.RawDataSubTaskArgs{
 			Ctx:     taskCtx,
 			Options: data.Options,
-			Table:   RAW_INCIDENTS_TABLE,
+			Table:   RAW_ALERTS_TABLE,
 		},
-		InputRowType: reflect.TypeOf(models.Incident{}),
+		InputRowType: reflect.TypeOf(models.Alert{}),
 		Input:        cursor,
 		Convert: func(inputRow interface{}) ([]interface{}, errors.Error) {
-			incident := inputRow.(*models.Incident)
-			status := getIncidentStatus(incident)
-			leadTime, resolutionDate := getIncidentTimes(incident)
+			alert := inputRow.(*models.Alert)
+			status := getAlertStatus(alert)
+			leadTime, resolutionDate := getAlertTimes(alert)
 			domainIssue := &ticket.Issue{
 				DomainEntity: domainlayer.DomainEntity{
-					Id: idGen.Generate(data.Options.ConnectionId, incident.Id),
+					Id: idGen.Generate(data.Options.ConnectionId, alert.Id),
 				},
-				Url:             incident.Url,
-				IssueKey:        incident.Message,
-				Description:     incident.Description,
+				IssueKey:        alert.Id,
+				Description:     alert.Description,
 				Type:            ticket.INCIDENT,
 				Status:          status,
-				OriginalStatus:  string(incident.Status),
+				OriginalStatus:  string(alert.Status),
 				ResolutionDate:  resolutionDate,
-				CreatedDate:     &incident.CreatedAt,
-				UpdatedDate:     &incident.UpdatedAt,
+				CreatedDate:     &alert.CreatedAt,
+				UpdatedDate:     &alert.UpdatedAt,
 				LeadTimeMinutes: leadTime,
-				Priority:        string(incident.Priority),
+				Priority:        string(alert.Priority),
 			}
 			var result []interface{}
 			result = append(result, domainIssue)
@@ -95,25 +97,25 @@ func ConvertIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 	return converter.Execute()
 }
 
-func getIncidentStatus(incident *models.Incident) string {
-	if incident.Status == models.IncidentStatusTriggered {
+func getAlertStatus(alert *models.Alert) string {
+	if alert.Status == models.AlertStatusTriggered {
 		return ticket.TODO
 	}
-	if incident.Status == models.IncidentStatusAcknowledged {
+	if alert.Status == models.AlertStatusAcknowledged {
 		return ticket.IN_PROGRESS
 	}
-	if incident.Status == models.IncidentStatusResolved {
+	if alert.Status == models.AlertStatusResolved {
 		return ticket.DONE
 	}
-	panic("unknown incident status encountered")
+	panic("unknown alert status encountered")
 }
 
-func getIncidentTimes(incident *models.Incident) (int64, *time.Time) {
+func getAlertTimes(alert *models.Alert) (int64, *time.Time) {
 	var leadTime int64
 	var resolutionDate *time.Time
-	if incident.Status == models.IncidentStatusResolved {
-		resolutionDate = &incident.UpdatedAt
-		leadTime = int64(resolutionDate.Sub(incident.CreatedAt).Minutes())
+	if alert.Status == models.AlertStatusResolved {
+		resolutionDate = &alert.UpdatedAt
+		leadTime = int64(resolutionDate.Sub(alert.CreatedAt).Minutes())
 	}
 	return leadTime, resolutionDate
 }

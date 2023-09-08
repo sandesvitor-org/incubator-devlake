@@ -1,0 +1,44 @@
+{
+    "data": {
+        "seen": true,
+        "id": "41ca446a-18aa-48af-84f8-16c6725252a9-1694004736001",
+        "tinyId": "5",
+        "alias": "41ca446a-18aa-48af-84f8-16c6725252a9-1694004736001",
+        "message": "Hello",
+        "status": "open",
+        "acknowledged": false,
+        "isSeen": true,
+        "tags": [],
+        "snoozed": false,
+        "count": 1,
+        "lastOccurredAt": "2023-09-06T12:52:16.001Z",
+        "createdAt": "2023-09-06T12:52:16.001Z",
+        "updatedAt": "2023-09-06T13:02:17.312Z",
+        "source": "sandesvitor@gmail.com",
+        "owner": "",
+        "priority": "P3",
+        "teams": [
+            {
+                "id": "c0259fb8-2068-48c5-ae09-1b116e3579b1"
+            }
+        ],
+        "responders": [
+            {
+                "type": "team",
+                "id": "c0259fb8-2068-48c5-ae09-1b116e3579b1"
+            }
+        ],
+        "integration": {
+            "id": "1ec509b9-a283-4937-8bba-31536b8137fd",
+            "name": "devlake_test_API",
+            "type": "API"
+        },
+        "ownerTeamId": "c0259fb8-2068-48c5-ae09-1b116e3579b1",
+        "actions": [],
+        "entity": "",
+        "description": "",
+        "details": {}
+    },
+    "took": 0.008,
+    "requestId": "b4685067-8a12-42f9-9dee-cffd5b5ec81e"
+}
