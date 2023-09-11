@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/apache/incubator-devlake/core/models/common"
 	"github.com/apache/incubator-devlake/helpers/e2ehelper"
 	"github.com/apache/incubator-devlake/plugins/opsgenie/impl"
 	"github.com/apache/incubator-devlake/plugins/opsgenie/models"
@@ -28,12 +29,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDataFlow(t *testing.T) {
+func TestIncidentDataFlow(t *testing.T) {
 	var plugin impl.Opsgenie
 	dataflowTester := e2ehelper.NewDataFlowTester(t, "opsgenie", plugin)
 	options := tasks.OpsgenieOptions{
 		ConnectionId: 1,
-		ServiceId:    "5faa5cc2-37d8-4182-b441-dea974ca0b67",
+		ServiceId:    "695bce3d-4621-4630-8ae1-24eb89c22d6e",
 		ServiceName:  "TestService",
 		Tasks:        nil,
 	}
@@ -57,23 +58,12 @@ func TestDataFlow(t *testing.T) {
 
 	dataflowTester.FlushTabler(&models.Incident{})
 
-	// verify service converter
-	dataflowTester.Subtask(tasks.ConvertServicesMeta, taskData)
-	// dataflowTester.VerifyTableWithOptions(
-	// 	models.Alert{},
-	// 	e2ehelper.TableOptions{
-	// 		CSVRelPath:  "./snapshot_tables/_tool_opsgenie_alerts.csv",
-	// 		IgnoreTypes: []any{common.Model{}},
-	// 	},
-	// )
-
-	// // verify service converter
-	// dataflowTester.Subtask(tasks.ExtractAlertsMeta, taskData)
-	// dataflowTester.VerifyTableWithOptions(
-	// 	models.Alert{},
-	// 	e2ehelper.TableOptions{
-	// 		CSVRelPath:  "./snapshot_tables/_tool_opsgenie_alerts.csv",
-	// 		IgnoreTypes: []any{common.Model{}},
-	// 	},
-	// )
+	dataflowTester.Subtask(tasks.ExtractIncidentsMeta, taskData)
+	dataflowTester.VerifyTableWithOptions(
+		models.Incident{},
+		e2ehelper.TableOptions{
+			CSVRelPath:  "./snapshot_tables/_tool_opsgenie_incidents.csv",
+			IgnoreTypes: []any{common.Model{}},
+		},
+	)
 }
