@@ -67,7 +67,7 @@
                     "showLineNumbers": false,
                     "showMiniMap": false
                 },
-                "content": "hows the incident and alerts data from Opsgenie.\n- Data Source Required: Opsgenie- Use Cases: This dashboard s",
+                "content": "- Use Cases: This dashboard shows the incident data from Opsgenie.\n- Data Source Required: Opsgenie",
                 "mode": "markdown"
             },
             "pluginVersion": "9.5.2",
@@ -85,7 +85,6 @@
             "type": "text"
         },
         {
-            "collapsed": false,
             "datasource": {
                 "type": "datasource",
                 "uid": "grafana"
@@ -97,7 +96,6 @@
                 "y": 3
             },
             "id": 126,
-            "panels": [],
             "targets": [
                 {
                     "datasource": {
@@ -115,7 +113,7 @@
                 "type": "mysql",
                 "uid": "P430005175C4C7810"
             },
-            "description": "1. Total number of incidents created.\n2. The requirements being calculated are filtered by \"requirement creation time\" (time filter at the upper-right corner) and \"Jira board\" (\"Choose Board\" filter at the upper-left corner)",
+            "description": "1. Total number of incidents created.\n2. The requirements being calculated are filtered by \"requirement creation time\" (time filter at the upper-right corner) and \"Opsgenie board\" (\"Choose Board\" filter at the upper-left corner)",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -169,7 +167,7 @@
                     "metricColumn": "none",
                     "queryType": "randomWalk",
                     "rawQuery": true,
-                    "rawSql": "select \r\n  count(*) as value\r\nfrom issues i\r\n  join board_issues bi on i.id = bi.issue_id\r\nwhere \r\n  $__timeFilter(i.created_date)\r\n  and bi.board_id in ($board_id)",
+                    "rawSql": "select count(distinct i.issue_key) as value\r\nfrom issues i\r\n  join board_issues bi on i.id = bi.issue_id\r\nwhere \r\n  $__timeFilter(i.created_date)\r\n  and bi.board_id in ($board_id)\r\n",
                     "refId": "A",
                     "select": [
                         [
@@ -271,7 +269,7 @@
                     "metricColumn": "none",
                     "queryType": "randomWalk",
                     "rawQuery": true,
-                    "rawSql": "select \r\n  count(*) as value\r\nfrom issues i\r\n  join board_issues bi on i.id = bi.issue_id\r\nwhere \r\n  i.original_status = 'resolved'\r\n  and $__timeFilter(i.created_date)\r\n  and bi.board_id in ($board_id)",
+                    "rawSql": "select count(distinct i.issue_key) as value\r\nfrom issues i\r\n  join board_issues bi on i.id = bi.issue_id\r\nwhere \r\n  i.original_status = 'resolved'\r\n  and $__timeFilter(i.created_date)\r\n  and bi.board_id in ($board_id)\r\n",
                     "refId": "A",
                     "select": [
                         [
@@ -358,12 +356,12 @@
                     {
                         "matcher": {
                             "id": "byName",
-                            "options": "issue_key"
+                            "options": "title"
                         },
                         "properties": [
                             {
                                 "id": "custom.width",
-                                "value": 284
+                                "value": 246
                             }
                         ]
                     }
@@ -402,7 +400,7 @@
                     "metricColumn": "none",
                     "queryType": "randomWalk",
                     "rawQuery": true,
-                    "rawSql": "select \r\n  b.name as service,\r\n  i.issue_key,\r\n  i.description,\r\n  i.original_status,\r\n  i.priority,\r\n  i.created_date,\r\n  i.updated_date,\r\n  round((i.lead_time_minutes/1440),1) as lead_time_days,\r\n  i.url\r\nfrom issues i\r\n  join board_issues bi on i.id = bi.issue_id\r\n  join boards b on bi.board_id = b.id\r\nwhere \r\n  $__timeFilter(i.created_date)\r\n  and bi.board_id in ($board_id)",
+                    "rawSql": "select \r\n  i.title,\r\n  i.issue_key,\r\n  group_concat(b.name separator \", \") as \"service(s)\",\r\n  i.description,\r\n  i.original_status,\r\n  i.priority,\r\n  i.created_date,\r\n  i.updated_date,\r\n  round((i.lead_time_minutes/1440),1) as lead_time_days,\r\n  i.url\r\nfrom issues i\r\n  join board_issues bi on i.id = bi.issue_id\r\n  join boards b on bi.board_id = b.id\r\nwhere \r\n  $__timeFilter(i.created_date)\r\n  and bi.board_id in ($board_id)\r\nGROUP BY i.title, i.issue_key, i.description, i.original_status, i.priority, i.created_date, i.updated_date, i.lead_time_minutes, i.url",
                     "refId": "A",
                     "select": [
                         [
@@ -1245,12 +1243,10 @@
             "type": "text"
         }
     ],
-    "refresh": "",
+    "refresh": false,
     "schemaVersion": 38,
     "style": "dark",
-    "tags": [
-        "Data Source Dashboard"
-    ],
+    "tags": [],
     "templating": {
         "list": [
             {
@@ -1284,13 +1280,13 @@
         ]
     },
     "time": {
-        "from": "now-6M",
-        "to": "now"
+        "from": "2022-12-09T21:00:42.390Z",
+        "to": "2023-12-12T21:00:42.390Z"
     },
     "timepicker": {},
     "timezone": "",
     "title": "Opsgenie",
     "uid": "b4556439-f173-4411-93d4-65f261726d24",
-    "version": 3,
+    "version": 7,
     "weekStart": ""
 }

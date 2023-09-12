@@ -129,9 +129,10 @@ func RemoteScopes(input *plugin.ApiResourceInput) (*plugin.ApiResourceOutput, er
 			Id:   service.Id,
 			Name: service.Name,
 			Data: models.Service{
-				Url:  service.Links.Web,
-				Id:   service.Id,
-				Name: service.Name,
+				Url:    service.Links.Web,
+				Id:     service.Id,
+				Name:   service.Name,
+				TeamId: service.TeamId,
 			},
 		}
 		outputBody.Children = append(outputBody.Children, child)

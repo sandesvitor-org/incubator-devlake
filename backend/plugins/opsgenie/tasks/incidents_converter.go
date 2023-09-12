@@ -43,10 +43,15 @@ func ConvertIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 	db := taskCtx.GetDal()
 	data := taskCtx.GetData().(*OpsgenieTaskData)
 
-	cursor, err := db.Cursor(dal.From(models.Incident{}), dal.Where("connection_id = ? AND service_id = ?", data.Options.ConnectionId, data.Options.ServiceId))
+	cursor, err := db.Cursor(
+		dal.From(models.Incident{}),
+		dal.Where("connection_id = ? AND service_id = ?", data.Options.ConnectionId, data.Options.ServiceId),
+	)
+
 	if err != nil {
 		return err
 	}
+
 	defer cursor.Close()
 
 	idGen := didgen.NewDomainIdGenerator(&models.Incident{})
@@ -61,14 +66,15 @@ func ConvertIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 		Input:        cursor,
 		Convert: func(inputRow interface{}) ([]interface{}, errors.Error) {
 			incident := inputRow.(*models.Incident)
-			status := getIncidentStatus(incident)
-			leadTime, resolutionDate := getIncidentTimes(incident)
+			status := getStatus(incident)
+			leadTime, resolutionDate := getTimes(incident)
 			domainIssue := &ticket.Issue{
 				DomainEntity: domainlayer.DomainEntity{
 					Id: idGen.Generate(data.Options.ConnectionId, incident.Id),
 				},
 				Url:             incident.Url,
 				IssueKey:        incident.Id,
+				Title:           incident.Message,
 				Description:     incident.Description,
 				Type:            ticket.INCIDENT,
 				Status:          status,
@@ -95,11 +101,11 @@ func ConvertIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 	return converter.Execute()
 }
 
-func getIncidentStatus(incident *models.Incident) string {
-	if incident.Status == models.IncidentStatusTriggered {
-		return ticket.TODO
+func getStatus(incident *models.Incident) string {
+	if incident.Status == models.IncidentStatusClosed {
+		return ticket.OTHER
 	}
-	if incident.Status == models.IncidentStatusAcknowledged {
+	if incident.Status == models.IncidentStatusOpen {
 		return ticket.IN_PROGRESS
 	}
 	if incident.Status == models.IncidentStatusResolved {
@@ -108,7 +114,7 @@ func getIncidentStatus(incident *models.Incident) string {
 	panic("unknown incident status encountered")
 }
 
-func getIncidentTimes(incident *models.Incident) (int64, *time.Time) {
+func getTimes(incident *models.Incident) (int64, *time.Time) {
 	var leadTime int64
 	var resolutionDate *time.Time
 	if incident.Status == models.IncidentStatusResolved {

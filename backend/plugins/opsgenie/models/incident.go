@@ -24,9 +24,9 @@ import (
 )
 
 const (
-	IncidentStatusAcknowledged IncidentStatus = "resolved"
-	IncidentStatusTriggered    IncidentStatus = "open"
-	IncidentStatusResolved     IncidentStatus = "closed"
+	IncidentStatusClosed   IncidentStatus = "closed"
+	IncidentStatusOpen     IncidentStatus = "open"
+	IncidentStatusResolved IncidentStatus = "resolved"
 )
 
 type (

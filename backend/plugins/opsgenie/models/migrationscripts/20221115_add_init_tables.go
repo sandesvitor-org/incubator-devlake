@@ -32,7 +32,6 @@ func (*addInitTables) Up(baseRes context.BasicRes) errors.Error {
 		&archived.OpsgenieConnection{},
 		&archived.Service{},
 		&archived.Incident{},
-		&archived.Alert{},
 	)
 	return err
 }

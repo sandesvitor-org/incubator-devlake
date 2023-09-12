@@ -51,6 +51,7 @@ func ConvertServices(taskCtx plugin.SubTaskContext) errors.Error {
 		dal.From("_tool_opsgenie_services services"),
 		dal.Where("id = ? and connection_id = ?", data.Options.ServiceId, data.Options.ConnectionId),
 	}
+
 	cursor, err := db.Cursor(clauses...)
 	if err != nil {
 		return err

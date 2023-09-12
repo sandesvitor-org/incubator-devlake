@@ -114,7 +114,7 @@ func CollectIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 					dal.From(&models.Incident{}),
 					dal.Where(
 						"service_id = ? AND connection_id = ? AND status != ?",
-						data.Options.ServiceId, data.Options.ConnectionId, "resolved",
+						data.Options.ServiceId, data.Options.ConnectionId, "closed",
 					),
 				)
 				if err != nil {

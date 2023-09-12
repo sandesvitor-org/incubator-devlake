@@ -28,6 +28,7 @@ type (
 		Id           string `gorm:"primaryKey;autoIncremental:false"`
 		Url          string
 		Name         string
+		TeamId       string
 	}
 )
 

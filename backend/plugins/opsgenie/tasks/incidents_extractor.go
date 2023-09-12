@@ -47,29 +47,26 @@ func ExtractIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 		},
 		Extract: func(row *api.RawData) ([]interface{}, errors.Error) {
 			incidentRaw := &raw.Incident{}
-
 			err := errors.Convert(json.Unmarshal(row.Data, incidentRaw))
 			if err != nil {
 				return nil, err
 			}
-
 			results := make([]interface{}, 0, 1)
 			incident := models.Incident{
 				ConnectionId: data.Options.ConnectionId,
 				Id:           *incidentRaw.Id,
 				Url:          resolve(incidentRaw.Links.Web),
 				Message:      *incidentRaw.Message,
-				ServiceId:    data.Options.ServiceId,
-				ServiceName:  data.Options.ServiceName,
 				OwnerTeam:    resolve(incidentRaw.OwnerTeam),
 				Description:  resolve(incidentRaw.Description),
+				ServiceId:    data.Options.ServiceId,
+				ServiceName:  data.Options.ServiceName,
 				Status:       models.IncidentStatus(*incidentRaw.Status),
 				Priority:     models.IncidentPriority(*incidentRaw.Priority),
 				CreatedAt:    *incidentRaw.CreatedAt,
 				UpdatedAt:    *incidentRaw.UpdatedAt,
 			}
 			results = append(results, &incident)
-
 			return results, nil
 		},
 	})

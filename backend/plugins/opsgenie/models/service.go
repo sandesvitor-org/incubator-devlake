@@ -33,6 +33,7 @@ type Service struct {
 	Id           string `json:"id" mapstructure:"id" gorm:"primaryKey;autoIncrement:false" `
 	Url          string `json:"url" mapstructure:"url"`
 	Name         string `json:"name" mapstructure:"name"`
+	TeamId       string `json:"team_id" mapstructure:"team_id"`
 }
 
 func (s Service) ScopeId() string {

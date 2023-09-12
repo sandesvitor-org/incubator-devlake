@@ -31,7 +31,7 @@ export const OpsgenieConfig: PluginConfigType = {
   icon: Icon,
   sort: 8,
   connection: {
-    docLink: DOC_URL.PLUGIN.PAGERDUTY.BASIS, // TODO
+    docLink: DOC_URL.PLUGIN.OPSGENIE.BASIS, // TODO
     initialValues: {
       endpoint: 'https://api.opsgenie.com/',
     },
@@ -48,7 +48,7 @@ export const OpsgenieConfig: PluginConfigType = {
         key: 'token',
         label: 'Opsgenie API Key',
         subLabel: (
-          <ExternalLink link={DOC_URL.PLUGIN.GITLAB.AUTH_TOKEN}>
+          <ExternalLink link={DOC_URL.PLUGIN.OPSGENIE.API_KEY}>
             Learn how to create a personal API Key
           </ExternalLink>
         ),
@@ -58,9 +58,9 @@ export const OpsgenieConfig: PluginConfigType = {
         key: 'rateLimitPerHour',
         subLabel:
           'By default, DevLake uses 10,000 requests/hour for data collection for PagerDuty. But you can adjust the collection speed by setting up your desirable rate limit.',
-        learnMore: DOC_URL.PLUGIN.PAGERDUTY.RATE_LIMIT,
-        externalInfo: 'PagerDuty does not specify a maximum value of rate limit.',
-        defaultValue: 10000,
+        learnMore: DOC_URL.PLUGIN.OPSGENIE.RATE_LIMIT,
+        externalInfo: 'Opsgenie does not specify a maximum value of rate limit.',
+        defaultValue: 750,
       },
     ],
   },
