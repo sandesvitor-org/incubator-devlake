@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/apache/incubator-devlake/core/models/common"
+	"github.com/apache/incubator-devlake/core/models/domainlayer/ticket"
 	"github.com/apache/incubator-devlake/helpers/e2ehelper"
 	"github.com/apache/incubator-devlake/plugins/opsgenie/impl"
 	"github.com/apache/incubator-devlake/plugins/opsgenie/models"
@@ -57,6 +58,8 @@ func TestIncidentDataFlow(t *testing.T) {
 	dataflowTester.ImportCsvIntoRawTable("./raw_tables/_raw_opsgenie_incidents.csv", "_raw_opsgenie_incidents")
 
 	dataflowTester.FlushTabler(&models.Incident{})
+	dataflowTester.FlushTabler(&models.Responder{})
+	dataflowTester.FlushTabler(&models.Assignment{})
 
 	dataflowTester.Subtask(tasks.ExtractIncidentsMeta, taskData)
 	dataflowTester.VerifyTableWithOptions(
@@ -66,4 +69,42 @@ func TestIncidentDataFlow(t *testing.T) {
 			IgnoreTypes: []any{common.Model{}},
 		},
 	)
+
+	dataflowTester.VerifyTableWithOptions(
+		models.Responder{},
+		e2ehelper.TableOptions{
+			CSVRelPath:  "./snapshot_tables/_tool_opsgenie_responders.csv",
+			IgnoreTypes: []any{common.Model{}},
+		},
+	)
+	dataflowTester.VerifyTableWithOptions(
+		models.Assignment{},
+		e2ehelper.TableOptions{
+			CSVRelPath:  "./snapshot_tables/_tool_opsgenie_assignments.csv",
+			IgnoreTypes: []any{common.Model{}},
+		},
+	)
+	dataflowTester.FlushTabler(&ticket.Issue{})
+	dataflowTester.FlushTabler(&ticket.IssueAssignee{})
+	dataflowTester.Subtask(tasks.ConvertIncidentsMeta, taskData)
+	dataflowTester.VerifyTableWithOptions(
+		ticket.Issue{},
+		e2ehelper.TableOptions{
+			CSVRelPath:  "./snapshot_tables/issues.csv",
+			IgnoreTypes: []any{common.NoPKModel{}},
+			IgnoreFields: []string{
+				"creator_id",
+				"creator_name",
+				"assignee_id",
+				"assignee_name",
+				"severity",
+				"component",
+				"original_project",
+			},
+		},
+	)
+	dataflowTester.VerifyTableWithOptions(ticket.IssueAssignee{}, e2ehelper.TableOptions{
+		CSVRelPath:  "./snapshot_tables/issue_assignees.csv",
+		IgnoreTypes: []interface{}{common.NoPKModel{}},
+	})
 }
