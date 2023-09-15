@@ -23,6 +23,7 @@ import (
 
 	"github.com/apache/incubator-devlake/core/dal"
 	"github.com/apache/incubator-devlake/core/errors"
+	"github.com/apache/incubator-devlake/core/models/common"
 	"github.com/apache/incubator-devlake/core/models/domainlayer"
 	"github.com/apache/incubator-devlake/core/models/domainlayer/didgen"
 	"github.com/apache/incubator-devlake/core/models/domainlayer/ticket"
@@ -39,13 +40,24 @@ var ConvertIncidentsMeta = plugin.SubTaskMeta{
 	DomainTypes:      []string{plugin.DOMAIN_TYPE_TICKET},
 }
 
+type (
+	IncidentWithResponder struct {
+		common.NoPKModel
+		models.Incident
+		*models.Responder
+	}
+)
+
 func ConvertIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 	db := taskCtx.GetDal()
 	data := taskCtx.GetData().(*OpsgenieTaskData)
 
 	cursor, err := db.Cursor(
-		dal.From(models.Incident{}),
-		dal.Where("connection_id = ? AND service_id = ?", data.Options.ConnectionId, data.Options.ServiceId),
+		dal.Select("incidents.*, responders.*, assignments.*"),
+		dal.From("_tool_opsgenie_incidents AS incidents"),
+		dal.Join(`LEFT JOIN _tool_opsgenie_assignments AS assignments ON assignments.incident_id = incidents.id`),
+		dal.Join(`LEFT JOIN _tool_opsgenie_responders AS responders ON assignments.responder_id = responders.id`),
+		dal.Where("incidents.connection_id = ? AND incidents.service_id = ?", data.Options.ConnectionId, data.Options.ServiceId),
 	)
 
 	if err != nil {
@@ -62,12 +74,14 @@ func ConvertIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 			Options: data.Options,
 			Table:   RAW_INCIDENTS_TABLE,
 		},
-		InputRowType: reflect.TypeOf(models.Incident{}),
+		InputRowType: reflect.TypeOf(IncidentWithResponder{}),
 		Input:        cursor,
 		Convert: func(inputRow interface{}) ([]interface{}, errors.Error) {
-			incident := inputRow.(*models.Incident)
-			status := getStatus(incident)
-			leadTime, resolutionDate := getTimes(incident)
+			combined := inputRow.(*IncidentWithResponder)
+			incident := combined.Incident
+			status := getStatus(&incident)
+			leadTime, resolutionDate := getTimes(&incident)
+
 			domainIssue := &ticket.Issue{
 				DomainEntity: domainlayer.DomainEntity{
 					Id: idGen.Generate(data.Options.ConnectionId, incident.Id),
@@ -80,12 +94,22 @@ func ConvertIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 				Status:          status,
 				OriginalStatus:  string(incident.Status),
 				ResolutionDate:  resolutionDate,
-				CreatedDate:     &incident.CreatedAt,
-				UpdatedDate:     &incident.UpdatedAt,
+				CreatedDate:     &incident.CreatedDate,
+				UpdatedDate:     &incident.UpdatedDate,
 				LeadTimeMinutes: leadTime,
 				Priority:        string(incident.Priority),
 			}
 			var result []interface{}
+			if combined.Responder != nil {
+				// domainIssue.AssigneeId = combined.Responder.Id
+				// domainIssue.AssigneeName = combined.Responder.Type
+				issueAssignee := &ticket.IssueAssignee{
+					IssueId:      domainIssue.Id,
+					AssigneeId:   combined.Responder.Id,
+					AssigneeName: combined.Responder.Type,
+				}
+				result = append(result, issueAssignee)
+			}
 			result = append(result, domainIssue)
 			boardIssue := &ticket.BoardIssue{
 				BoardId: serviceIdGen.Generate(data.Options.ConnectionId, data.Options.ServiceId),
@@ -118,8 +142,8 @@ func getTimes(incident *models.Incident) (int64, *time.Time) {
 	var leadTime int64
 	var resolutionDate *time.Time
 	if incident.Status == models.IncidentStatusResolved {
-		resolutionDate = &incident.UpdatedAt
-		leadTime = int64(resolutionDate.Sub(incident.CreatedAt).Minutes())
+		resolutionDate = &incident.UpdatedDate
+		leadTime = int64(resolutionDate.Sub(incident.CreatedDate).Minutes())
 	}
 	return leadTime, resolutionDate
 }

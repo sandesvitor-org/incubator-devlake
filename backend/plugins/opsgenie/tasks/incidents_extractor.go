@@ -51,6 +51,7 @@ func ExtractIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 			if err != nil {
 				return nil, err
 			}
+
 			results := make([]interface{}, 0, 1)
 			incident := models.Incident{
 				ConnectionId: data.Options.ConnectionId,
@@ -63,10 +64,22 @@ func ExtractIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 				ServiceName:  data.Options.ServiceName,
 				Status:       models.IncidentStatus(*incidentRaw.Status),
 				Priority:     models.IncidentPriority(*incidentRaw.Priority),
-				CreatedAt:    *incidentRaw.CreatedAt,
-				UpdatedAt:    *incidentRaw.UpdatedAt,
+				CreatedDate:  *incidentRaw.CreatedAt,
+				UpdatedDate:  *incidentRaw.UpdatedAt,
 			}
 			results = append(results, &incident)
+			for _, responderRaw := range *incidentRaw.Responders {
+				results = append(results, &models.Assignment{
+					ConnectionId: data.Options.ConnectionId,
+					ResponderId:  *responderRaw.Id,
+					IncidentId:   *incidentRaw.Id,
+				})
+				results = append(results, &models.Responder{
+					ConnectionId: data.Options.ConnectionId,
+					Id:           *responderRaw.Id,
+					Type:         *responderRaw.Type,
+				})
+			}
 			return results, nil
 		},
 	})

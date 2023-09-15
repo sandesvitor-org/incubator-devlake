@@ -18,7 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 32,
+    "id": 20,
     "links": [
         {
             "asDropdown": false,
@@ -85,6 +85,7 @@
             "type": "text"
         },
         {
+            "collapsed": false,
             "datasource": {
                 "type": "datasource",
                 "uid": "grafana"
@@ -96,6 +97,7 @@
                 "y": 3
             },
             "id": 126,
+            "panels": [],
             "targets": [
                 {
                     "datasource": {
@@ -400,7 +402,7 @@
                     "metricColumn": "none",
                     "queryType": "randomWalk",
                     "rawQuery": true,
-                    "rawSql": "select \r\n  i.title,\r\n  i.issue_key,\r\n  group_concat(b.name separator \", \") as \"service(s)\",\r\n  i.description,\r\n  i.original_status,\r\n  i.priority,\r\n  i.created_date,\r\n  i.updated_date,\r\n  round((i.lead_time_minutes/1440),1) as lead_time_days,\r\n  i.url\r\nfrom issues i\r\n  join board_issues bi on i.id = bi.issue_id\r\n  join boards b on bi.board_id = b.id\r\nwhere \r\n  $__timeFilter(i.created_date)\r\n  and bi.board_id in ($board_id)\r\nGROUP BY i.title, i.issue_key, i.description, i.original_status, i.priority, i.created_date, i.updated_date, i.lead_time_minutes, i.url",
+                    "rawSql": "select \r\n  i.title as name,\r\n  i.issue_key as id,\r\n  group_concat(b.name separator \", \") as \"service(s)\",\r\n  i.description,\r\n  i.original_status,\r\n  i.priority,\r\n  i.created_date,\r\n  i.updated_date,\r\n  round((i.lead_time_minutes/1440),1) as lead_time_days,\r\n  i.url\r\nfrom issues i\r\n  join board_issues bi on i.id = bi.issue_id\r\n  join boards b on bi.board_id = b.id\r\nwhere \r\n  $__timeFilter(i.created_date)\r\n  and bi.board_id in ($board_id)\r\nGROUP BY i.title, i.issue_key, i.description, i.original_status, i.priority, i.created_date, i.updated_date, i.lead_time_minutes, i.url",
                     "refId": "A",
                     "select": [
                         [
@@ -1241,9 +1243,136 @@
                 }
             ],
             "type": "text"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 31
+            },
+            "id": 132,
+            "panels": [],
+            "title": "3. Incident Responders",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "mysql",
+                "uid": "P430005175C4C7810"
+            },
+            "description": "Due to Opsgenie API limitation regarding the relationship between assignee, users, and incident (and lack of 'assign at' key ), the column assignee represents a JSON object containing all assignee from said incident",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "inspect": false
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "issue_id"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 504
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "name"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 286
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 24,
+                "x": 0,
+                "y": 32
+            },
+            "id": 133,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": false,
+                    "fields": "",
+                    "reducer": [
+                        "sum"
+                    ],
+                    "show": false
+                },
+                "showHeader": true,
+                "sortBy": []
+            },
+            "pluginVersion": "9.5.2",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "mysql",
+                        "uid": "P430005175C4C7810"
+                    },
+                    "editorMode": "code",
+                    "format": "table",
+                    "rawQuery": true,
+                    "rawSql": "select \n  i.title as name,\n  concat('[', group_concat(concat('{\"type\": \"', a.assignee_name, '\"', ', \"id\": \"', a.assignee_id, '\"}') separator \", \"), ']') as assignee\nfrom issues as i\n  inner join issue_assignees as a on (substring_index(i.id, \":\", -1) = substring_index(a.issue_id, \":\", -1))\ngroup by i.title;",
+                    "refId": "A",
+                    "sql": {
+                        "columns": [
+                            {
+                                "parameters": [],
+                                "type": "function"
+                            }
+                        ],
+                        "groupBy": [
+                            {
+                                "property": {
+                                    "type": "string"
+                                },
+                                "type": "groupBy"
+                            }
+                        ],
+                        "limit": 50
+                    }
+                }
+            ],
+            "title": "List of Incident Responder [organized in JSON format]",
+            "type": "table"
         }
     ],
-    "refresh": false,
+    "refresh": "",
     "schemaVersion": 38,
     "style": "dark",
     "tags": [],
@@ -1287,6 +1416,6 @@
     "timezone": "",
     "title": "Opsgenie",
     "uid": "b4556439-f173-4411-93d4-65f261726d24",
-    "version": 7,
+    "version": 14,
     "weekStart": ""
 }

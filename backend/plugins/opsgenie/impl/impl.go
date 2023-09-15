@@ -84,6 +84,8 @@ func (p Opsgenie) GetTablesInfo() []dal.Tabler {
 		&models.OpsgenieConnection{},
 		&models.Service{},
 		&models.Incident{},
+		&models.Responder{},
+		&models.Assignment{},
 	}
 }
 

@@ -45,8 +45,8 @@ type (
 		OwnerTeam    string
 		Priority     IncidentPriority
 		Status       IncidentStatus
-		CreatedAt    time.Time
-		UpdatedAt    time.Time
+		CreatedDate  time.Time
+		UpdatedDate  time.Time
 	}
 )
 

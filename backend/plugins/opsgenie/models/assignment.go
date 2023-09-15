@@ -15,30 +15,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package archived
+package models
 
 import (
-	"time"
-
-	"github.com/apache/incubator-devlake/core/models/migrationscripts/archived"
+	"github.com/apache/incubator-devlake/core/models/common"
 )
 
-type Incident struct {
-	archived.NoPKModel
-	ConnectionId uint64 `gorm:"primaryKey"`
-	Id           string `gorm:"primaryKey"`
-	Url          string
-	ServiceId    string
-	ServiceName  string
-	Description  string
-	Message      string
-	OwnerTeam    string
-	Priority     string
-	Status       string
-	CreatedDate  time.Time
-	UpdatedDate  time.Time
+type Assignment struct {
+	common.NoPKModel
+	ConnectionId uint64
+	ResponderId  string `gorm:"primaryKey"`
+	IncidentId   string `gorm:"primaryKey"`
 }
 
-func (Incident) TableName() string {
-	return "_tool_opsgenie_incidents"
+func (Assignment) TableName() string {
+	return "_tool_opsgenie_assignments"
 }

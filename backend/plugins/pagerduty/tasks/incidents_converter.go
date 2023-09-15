@@ -90,6 +90,13 @@ func ConvertIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 			}
 			status := getStatus(&incident)
 			leadTime, resolutionDate := getTimes(&incident)
+
+			fmt.Println("")
+			fmt.Println("#### INSIDE CONVERTER")
+			fmt.Println(leadTime)
+			fmt.Println(resolutionDate)
+			fmt.Println("")
+
 			domainIssue := &ticket.Issue{
 				DomainEntity: domainlayer.DomainEntity{
 					Id: idGen.Generate(data.Options.ConnectionId, incident.Number),
