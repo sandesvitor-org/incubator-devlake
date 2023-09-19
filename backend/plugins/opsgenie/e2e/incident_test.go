@@ -60,7 +60,6 @@ func TestIncidentDataFlow(t *testing.T) {
 	dataflowTester.FlushTabler(&models.Incident{})
 	dataflowTester.FlushTabler(&models.Responder{})
 	dataflowTester.FlushTabler(&models.Assignment{})
-
 	dataflowTester.Subtask(tasks.ExtractIncidentsMeta, taskData)
 	dataflowTester.VerifyTableWithOptions(
 		models.Incident{},

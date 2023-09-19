@@ -101,12 +101,9 @@ func ConvertIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 			}
 			var result []interface{}
 			if combined.Responder != nil {
-				// domainIssue.AssigneeId = combined.Responder.Id
-				// domainIssue.AssigneeName = combined.Responder.Type
 				issueAssignee := &ticket.IssueAssignee{
-					IssueId:      domainIssue.Id,
-					AssigneeId:   combined.Responder.Id,
-					AssigneeName: combined.Responder.Type,
+					IssueId:    domainIssue.Id,
+					AssigneeId: combined.Responder.Id,
 				}
 				result = append(result, issueAssignee)
 			}
