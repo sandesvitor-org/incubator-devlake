@@ -26,7 +26,7 @@ import (
 	"github.com/apache/incubator-devlake/helpers/pluginhelper/api"
 )
 
-const RAW_TEAMS_TABLE = "opsgenie_users"
+const RAW_TEAMS_TABLE = "opsgenie_teams"
 
 type (
 	collectedTeams struct {
@@ -49,7 +49,7 @@ func CollectTeams(taskCtx plugin.SubTaskContext) errors.Error {
 		RawDataSubTaskArgs: api.RawDataSubTaskArgs{
 			Ctx:     taskCtx,
 			Options: data.Options,
-			Table:   RAW_USERS_TABLE,
+			Table:   RAW_TEAMS_TABLE,
 		},
 		ApiClient:   data.Client,
 		UrlTemplate: "v2/teams",

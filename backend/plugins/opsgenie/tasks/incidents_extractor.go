@@ -34,11 +34,7 @@ var ExtractIncidentsMeta = plugin.SubTaskMeta{
 	EntryPoint:       ExtractIncidents,
 	EnabledByDefault: true,
 	Description:      "Extract Opsgenie incidents",
-	Dependencies: []*plugin.SubTaskMeta{
-		&CollectUsersMeta,
-		&CollectTeamsMeta,
-	},
-	DomainTypes: []string{plugin.DOMAIN_TYPE_TICKET},
+	DomainTypes:      []string{plugin.DOMAIN_TYPE_TICKET},
 }
 
 func ExtractIncidents(taskCtx plugin.SubTaskContext) errors.Error {
@@ -73,6 +69,9 @@ func ExtractIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 			}
 			results = append(results, &incident)
 			for _, responderRaw := range *incidentRaw.Responders {
+				if err != nil {
+					return nil, err
+				}
 				results = append(results, &models.Assignment{
 					ConnectionId: data.Options.ConnectionId,
 					ResponderId:  *responderRaw.Id,

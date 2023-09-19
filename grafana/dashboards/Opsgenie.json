@@ -18,7 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 13,
+    "id": 23,
     "links": [
         {
             "asDropdown": false,
@@ -1311,7 +1311,7 @@
                         "properties": [
                             {
                                 "id": "custom.width",
-                                "value": 308
+                                "value": 286
                             }
                         ]
                     }
@@ -1335,12 +1335,7 @@
                     "show": false
                 },
                 "showHeader": true,
-                "sortBy": [
-                    {
-                        "desc": false,
-                        "displayName": "2"
-                    }
-                ]
+                "sortBy": []
             },
             "pluginVersion": "9.5.2",
             "targets": [
@@ -1352,7 +1347,7 @@
                     "editorMode": "code",
                     "format": "table",
                     "rawQuery": true,
-                    "rawSql": "select \n  i.title as incident_name,\n  group_concat(a.assignee_id separator ', ') as responder_id\nfrom issues as i\n  inner join issue_assignees as a on (substring_index(i.id, \":\", -1) = substring_index(a.issue_id, \":\", -1))\ngroup by i.title;",
+                    "rawSql": "select \n  i.title as name,\n  concat('[', group_concat(concat('{\"name\": \"', a.assignee_name, '\"', ', \"type\": \"', r.type, '\"}') separator \", \"), ']') as assignee\nfrom issues as i\n  inner join issue_assignees as a on (substring_index(i.id, \":\", -1) = substring_index(a.issue_id, \":\", -1))\n  inner join _tool_opsgenie_responders as r on a.assignee_id = r.id\ngroup by i.title;",
                     "refId": "A",
                     "sql": {
                         "columns": [
@@ -1374,11 +1369,10 @@
                 }
             ],
             "title": "List of Incident Responder [organized in JSON format]",
-            "transformations": [],
             "type": "table"
         }
     ],
-    "refresh": false,
+    "refresh": "",
     "schemaVersion": 38,
     "style": "dark",
     "tags": [],
@@ -1422,6 +1416,6 @@
     "timezone": "",
     "title": "Opsgenie",
     "uid": "b4556439-f173-4411-93d4-65f261726d24",
-    "version": 8,
+    "version": 3,
     "weekStart": ""
 }

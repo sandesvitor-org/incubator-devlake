@@ -24,6 +24,8 @@ type Responder struct {
 	ConnectionId uint64 `gorm:"primaryKey"`
 	Id           string `gorm:"primaryKey;autoIncremental:false"`
 	Type         string
+	FullName     string
+	Name         string
 }
 
 func (Responder) TableName() string {
