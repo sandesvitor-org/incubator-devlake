@@ -37,7 +37,11 @@ var ConvertIncidentsMeta = plugin.SubTaskMeta{
 	EntryPoint:       ConvertIncidents,
 	EnabledByDefault: true,
 	Description:      "Convert Incidents into domain layer table issues",
-	DomainTypes:      []string{plugin.DOMAIN_TYPE_TICKET},
+	Dependencies: []*plugin.SubTaskMeta{
+		&ExtractUsersMeta,
+		&ExtractTeamsMeta,
+	},
+	DomainTypes: []string{plugin.DOMAIN_TYPE_TICKET},
 }
 
 type (

@@ -27,63 +27,39 @@ import (
 	"github.com/apache/incubator-devlake/plugins/opsgenie/models/raw"
 )
 
-var _ plugin.SubTaskEntryPoint = ExtractIncidents
+var _ plugin.SubTaskEntryPoint = ExtractUsers
 
-var ExtractIncidentsMeta = plugin.SubTaskMeta{
-	Name:             "extractIncidents",
-	EntryPoint:       ExtractIncidents,
+var ExtractUsersMeta = plugin.SubTaskMeta{
+	Name:             "extractUsers",
+	EntryPoint:       ExtractUsers,
 	EnabledByDefault: true,
-	Description:      "Extract Opsgenie incidents",
-	Dependencies: []*plugin.SubTaskMeta{
-		&CollectUsersMeta,
-		&CollectTeamsMeta,
-	},
-	DomainTypes: []string{plugin.DOMAIN_TYPE_TICKET},
+	Description:      "extract Opsgenie users",
+	DomainTypes:      []string{plugin.DOMAIN_TYPE_CROSS},
 }
 
-func ExtractIncidents(taskCtx plugin.SubTaskContext) errors.Error {
+func ExtractUsers(taskCtx plugin.SubTaskContext) errors.Error {
 	data := taskCtx.GetData().(*OpsgenieTaskData)
 	extractor, err := api.NewApiExtractor(api.ApiExtractorArgs{
 		RawDataSubTaskArgs: api.RawDataSubTaskArgs{
 			Ctx:     taskCtx,
 			Options: data.Options,
-			Table:   RAW_INCIDENTS_TABLE,
+			Table:   RAW_USERS_TABLE,
 		},
 		Extract: func(row *api.RawData) ([]interface{}, errors.Error) {
-			incidentRaw := &raw.Incident{}
-			err := errors.Convert(json.Unmarshal(row.Data, incidentRaw))
+			userRaw := &raw.User{}
+			err := errors.Convert(json.Unmarshal(row.Data, userRaw))
 			if err != nil {
 				return nil, err
 			}
 
 			results := make([]interface{}, 0, 1)
-			incident := models.Incident{
+			user := models.User{
 				ConnectionId: data.Options.ConnectionId,
-				Id:           *incidentRaw.Id,
-				Url:          resolve(incidentRaw.Links.Web),
-				Message:      *incidentRaw.Message,
-				OwnerTeam:    resolve(incidentRaw.OwnerTeam),
-				Description:  resolve(incidentRaw.Description),
-				ServiceId:    data.Options.ServiceId,
-				ServiceName:  data.Options.ServiceName,
-				Status:       models.IncidentStatus(*incidentRaw.Status),
-				Priority:     models.IncidentPriority(*incidentRaw.Priority),
-				CreatedDate:  *incidentRaw.CreatedAt,
-				UpdatedDate:  *incidentRaw.UpdatedAt,
+				Id:           *userRaw.Id,
+				Username:     *userRaw.Username,
+				FullName:     *userRaw.FullName,
 			}
-			results = append(results, &incident)
-			for _, responderRaw := range *incidentRaw.Responders {
-				results = append(results, &models.Assignment{
-					ConnectionId: data.Options.ConnectionId,
-					ResponderId:  *responderRaw.Id,
-					IncidentId:   *incidentRaw.Id,
-				})
-				results = append(results, &models.Responder{
-					ConnectionId: data.Options.ConnectionId,
-					Id:           *responderRaw.Id,
-					Type:         *responderRaw.Type,
-				})
-			}
+			results = append(results, &user)
 			return results, nil
 		},
 	})

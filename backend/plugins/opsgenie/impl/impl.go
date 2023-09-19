@@ -86,6 +86,8 @@ func (p Opsgenie) GetTablesInfo() []dal.Tabler {
 		&models.Incident{},
 		&models.Responder{},
 		&models.Assignment{},
+		&models.User{},
+		&models.Team{},
 	}
 }
 
@@ -93,7 +95,13 @@ func (p Opsgenie) SubTaskMetas() []plugin.SubTaskMeta {
 	return []plugin.SubTaskMeta{
 		tasks.CollectIncidentsMeta,
 		tasks.ExtractIncidentsMeta,
-		tasks.ConvertIncidentsMeta,
+		//tasks.ConvertIncidentsMeta,
+		tasks.CollectUsersMeta,
+		tasks.ExtractUsersMeta,
+		tasks.ConvertUsersMeta,
+		tasks.CollectTeamsMeta,
+		tasks.ExtractTeamsMeta,
+		tasks.ConvertTeamsMeta,
 		tasks.ConvertServicesMeta,
 	}
 }

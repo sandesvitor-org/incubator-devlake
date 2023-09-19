@@ -15,35 +15,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package migrationscripts
+package archived
 
-import (
-	"github.com/apache/incubator-devlake/core/context"
-	"github.com/apache/incubator-devlake/core/errors"
-	"github.com/apache/incubator-devlake/helpers/migrationhelper"
-	"github.com/apache/incubator-devlake/plugins/opsgenie/models/migrationscripts/archived"
-)
+import "github.com/apache/incubator-devlake/core/models/migrationscripts/archived"
 
-type addInitTables struct{}
-
-func (*addInitTables) Up(baseRes context.BasicRes) errors.Error {
-	err := migrationhelper.AutoMigrateTables(
-		baseRes,
-		&archived.OpsgenieConnection{},
-		&archived.Service{},
-		&archived.Incident{},
-		&archived.Responder{},
-		&archived.Assignment{},
-		&archived.User{},
-		&archived.Team{},
-	)
-	return err
+type User struct {
+	archived.NoPKModel
+	ConnectionId uint64 `gorm:"primaryKey"`
+	Id           string `gorm:"primaryKey;autoIncrement:false"`
+	Username     string
+	FullName     string
 }
 
-func (*addInitTables) Version() uint64 {
-	return 20221115000001
-}
-
-func (*addInitTables) Name() string {
-	return "Opsgenie init schemas"
+func (User) TableName() string {
+	return "_tool_opsgenie_users"
 }
