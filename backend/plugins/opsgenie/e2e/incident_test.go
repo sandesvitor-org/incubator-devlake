@@ -90,7 +90,7 @@ func TestIncidentDataFlow(t *testing.T) {
 			IgnoreTypes: []any{common.Model{}},
 		},
 	)
-	dataflowTester.Subtask(tasks.ConvertUsersMeta, taskData)
+	dataflowTester.Subtask(tasks.ConvertTeamsMeta, taskData)
 	dataflowTester.VerifyTableWithOptions(crossdomain.Team{}, e2ehelper.TableOptions{
 		CSVRelPath:  "./snapshot_tables/teams.csv",
 		IgnoreTypes: []interface{}{common.NoPKModel{}},
