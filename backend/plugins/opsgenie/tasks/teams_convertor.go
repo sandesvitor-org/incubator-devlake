@@ -23,61 +23,60 @@ import (
 	"github.com/apache/incubator-devlake/core/dal"
 	"github.com/apache/incubator-devlake/core/errors"
 	"github.com/apache/incubator-devlake/core/models/domainlayer"
+	"github.com/apache/incubator-devlake/core/models/domainlayer/crossdomain"
 	"github.com/apache/incubator-devlake/core/models/domainlayer/didgen"
-	"github.com/apache/incubator-devlake/core/models/domainlayer/ticket"
 	"github.com/apache/incubator-devlake/core/plugin"
-	helper "github.com/apache/incubator-devlake/helpers/pluginhelper/api"
+	"github.com/apache/incubator-devlake/helpers/pluginhelper/api"
 	"github.com/apache/incubator-devlake/plugins/opsgenie/models"
 )
 
-var ConvertServicesMeta = plugin.SubTaskMeta{
-	Name:             "convertServices",
-	EntryPoint:       ConvertServices,
+var ConvertTeamsMeta = plugin.SubTaskMeta{
+	Name:             "convertTeams",
+	EntryPoint:       ConvertTeams,
 	EnabledByDefault: true,
-	Description:      "Convert Opsgenie services",
-	DomainTypes:      []string{plugin.DOMAIN_TYPE_TICKET},
+	Description:      "convert Jira teams",
+	DomainTypes:      []string{plugin.DOMAIN_TYPE_CROSS},
 }
 
-func ConvertServices(taskCtx plugin.SubTaskContext) errors.Error {
-	db := taskCtx.GetDal()
+func ConvertTeams(taskCtx plugin.SubTaskContext) errors.Error {
 	data := taskCtx.GetData().(*OpsgenieTaskData)
-	rawDataSubTaskArgs := &helper.RawDataSubTaskArgs{
-		Ctx:     taskCtx,
-		Options: data.Options,
-		Table:   "opsgenie_services",
-	}
+	connectionId := data.Options.ConnectionId
+	db := taskCtx.GetDal()
 	clauses := []dal.Clause{
-		dal.Select("services.*"),
-		dal.From("_tool_opsgenie_services services"),
-		dal.Where("services.id = ? and services.connection_id = ?", data.Options.ServiceId, data.Options.ConnectionId),
+		dal.Select("teams.*"),
+		dal.From("_tool_opsgenie_teams teams"),
+		dal.Where("teams.connection_id = ?", connectionId),
 	}
-
 	cursor, err := db.Cursor(clauses...)
 	if err != nil {
 		return err
 	}
 	defer cursor.Close()
 
-	converter, err := helper.NewDataConverter(helper.DataConverterArgs{
-		RawDataSubTaskArgs: *rawDataSubTaskArgs,
-		InputRowType:       reflect.TypeOf(models.Service{}),
-		Input:              cursor,
+	accountIdGen := didgen.NewDomainIdGenerator(&models.Team{})
+	converter, err := api.NewDataConverter(api.DataConverterArgs{
+		RawDataSubTaskArgs: api.RawDataSubTaskArgs{
+			Ctx:     taskCtx,
+			Options: data.Options,
+			Table:   RAW_TEAMS_TABLE,
+		},
+		InputRowType: reflect.TypeOf(models.Team{}),
+		Input:        cursor,
 		Convert: func(inputRow interface{}) ([]interface{}, errors.Error) {
-			service := inputRow.(*models.Service)
-			domainBoard := &ticket.Board{
+			team := inputRow.(*models.Team)
+			u := &crossdomain.Team{
 				DomainEntity: domainlayer.DomainEntity{
-					Id: didgen.NewDomainIdGenerator(service).Generate(service.ConnectionId, service.Id),
+					Id: accountIdGen.Generate(connectionId, team.Id),
 				},
-				Name: service.Name,
-				Url:  service.Url,
+				Name:  team.Id,
+				Alias: team.Name,
 			}
-			return []interface{}{
-				domainBoard,
-			}, nil
+			return []interface{}{u}, nil
 		},
 	})
 	if err != nil {
 		return err
 	}
+
 	return converter.Execute()
 }

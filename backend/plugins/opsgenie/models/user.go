@@ -21,15 +21,14 @@ import (
 	"github.com/apache/incubator-devlake/core/models/common"
 )
 
-type Responder struct {
+type User struct {
 	common.NoPKModel
 	ConnectionId uint64 `gorm:"primaryKey"`
 	Id           string `gorm:"primaryKey;autoIncrement:false"`
-	Type         string
+	Username     string
 	FullName     string
-	Name         string
 }
 
-func (Responder) TableName() string {
-	return "_tool_opsgenie_responders"
+func (User) TableName() string {
+	return "_tool_opsgenie_users"
 }

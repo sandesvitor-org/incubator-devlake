@@ -34,6 +34,8 @@ func (*addInitTables) Up(baseRes context.BasicRes) errors.Error {
 		&archived.Incident{},
 		&archived.Responder{},
 		&archived.Assignment{},
+		&archived.User{},
+		&archived.Team{},
 	)
 	return err
 }

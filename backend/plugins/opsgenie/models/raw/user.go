@@ -15,21 +15,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package models
+package raw
 
-import (
-	"github.com/apache/incubator-devlake/core/models/common"
-)
+import "time"
 
-type Responder struct {
-	common.NoPKModel
-	ConnectionId uint64 `gorm:"primaryKey"`
-	Id           string `gorm:"primaryKey;autoIncrement:false"`
-	Type         string
-	FullName     string
-	Name         string
-}
-
-func (Responder) TableName() string {
-	return "_tool_opsgenie_responders"
+type User struct {
+	Blocked  *bool   `json:"blocked"`
+	Verified *bool   `json:"verified"`
+	Id       *string `json:"id"`
+	Username *string `json:"username"`
+	FullName *string `json:"fullName"`
+	Role     *struct {
+		Id   *string `json:"id"`
+		Name *string `json:"name"`
+	} `json:"role"`
+	TimeZone    *string `json:"timeZone"`
+	Locale      *string `json:"locale"`
+	UserAddress *struct {
+		Country *string `json:"country"`
+		State   *string `json:"state"`
+		City    *string `json:"city"`
+		Line    *string `json:"line"`
+		ZipCode *string `json:"zipCode"`
+	} `json:"userAddress"`
+	CreatedAt *time.Time `json:"createdAt"`
 }

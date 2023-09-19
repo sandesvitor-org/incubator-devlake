@@ -15,21 +15,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package models
+package archived
 
-import (
-	"github.com/apache/incubator-devlake/core/models/common"
-)
+import "github.com/apache/incubator-devlake/core/models/migrationscripts/archived"
 
-type Responder struct {
-	common.NoPKModel
+type Team struct {
+	archived.NoPKModel
 	ConnectionId uint64 `gorm:"primaryKey"`
 	Id           string `gorm:"primaryKey;autoIncrement:false"`
-	Type         string
-	FullName     string
 	Name         string
+	Description  string
 }
 
-func (Responder) TableName() string {
-	return "_tool_opsgenie_responders"
+func (Team) TableName() string {
+	return "_tool_opsgenie_teams"
 }

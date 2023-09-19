@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/apache/incubator-devlake/core/models/common"
+	"github.com/apache/incubator-devlake/core/models/domainlayer/crossdomain"
 	"github.com/apache/incubator-devlake/core/models/domainlayer/ticket"
 	"github.com/apache/incubator-devlake/helpers/e2ehelper"
 	"github.com/apache/incubator-devlake/plugins/opsgenie/impl"
@@ -56,10 +57,45 @@ func TestIncidentDataFlow(t *testing.T) {
 
 	// import raw data table
 	dataflowTester.ImportCsvIntoRawTable("./raw_tables/_raw_opsgenie_incidents.csv", "_raw_opsgenie_incidents")
+	dataflowTester.ImportCsvIntoRawTable("./raw_tables/_raw_opsgenie_users.csv", "_raw_opsgenie_users")
+	dataflowTester.ImportCsvIntoRawTable("./raw_tables/_raw_opsgenie_teams.csv", "_raw_opsgenie_teams")
 
+	dataflowTester.FlushTabler(&models.User{})
+	dataflowTester.FlushTabler(&models.Team{})
 	dataflowTester.FlushTabler(&models.Incident{})
 	dataflowTester.FlushTabler(&models.Responder{})
 	dataflowTester.FlushTabler(&models.Assignment{})
+
+	dataflowTester.FlushTabler(crossdomain.User{})
+	dataflowTester.FlushTabler(crossdomain.Team{})
+	dataflowTester.Subtask(tasks.ExtractUsersMeta, taskData)
+	dataflowTester.VerifyTableWithOptions(
+		models.User{},
+		e2ehelper.TableOptions{
+			CSVRelPath:  "./snapshot_tables/_tool_opsgenie_users.csv",
+			IgnoreTypes: []any{common.Model{}},
+		},
+	)
+	dataflowTester.Subtask(tasks.ConvertUsersMeta, taskData)
+	dataflowTester.VerifyTableWithOptions(crossdomain.User{}, e2ehelper.TableOptions{
+		CSVRelPath:  "./snapshot_tables/users.csv",
+		IgnoreTypes: []interface{}{common.NoPKModel{}},
+	})
+
+	dataflowTester.Subtask(tasks.ExtractTeamsMeta, taskData)
+	dataflowTester.VerifyTableWithOptions(
+		models.Team{},
+		e2ehelper.TableOptions{
+			CSVRelPath:  "./snapshot_tables/_tool_opsgenie_teams.csv",
+			IgnoreTypes: []any{common.Model{}},
+		},
+	)
+	dataflowTester.Subtask(tasks.ConvertTeamsMeta, taskData)
+	dataflowTester.VerifyTableWithOptions(crossdomain.Team{}, e2ehelper.TableOptions{
+		CSVRelPath:  "./snapshot_tables/teams.csv",
+		IgnoreTypes: []interface{}{common.NoPKModel{}},
+	})
+
 	dataflowTester.Subtask(tasks.ExtractIncidentsMeta, taskData)
 	dataflowTester.VerifyTableWithOptions(
 		models.Incident{},
@@ -68,7 +104,6 @@ func TestIncidentDataFlow(t *testing.T) {
 			IgnoreTypes: []any{common.Model{}},
 		},
 	)
-
 	dataflowTester.VerifyTableWithOptions(
 		models.Responder{},
 		e2ehelper.TableOptions{

@@ -37,7 +37,22 @@ var ConvertIncidentsMeta = plugin.SubTaskMeta{
 	EntryPoint:       ConvertIncidents,
 	EnabledByDefault: true,
 	Description:      "Convert Incidents into domain layer table issues",
-	DomainTypes:      []string{plugin.DOMAIN_TYPE_TICKET},
+	Dependencies: []*plugin.SubTaskMeta{
+		&ExtractUsersMeta,
+		&ExtractTeamsMeta,
+		&CollectUsersMeta,
+		&CollectTeamsMeta,
+		&ConvertUsersMeta,
+		&ConvertTeamsMeta,
+	},
+	DependencyTables: []string{
+		RAW_INCIDENTS_TABLE,
+		RAW_USERS_TABLE,
+		RAW_TEAMS_TABLE,
+		models.User{}.TableName(), // cursor
+		models.Team{}.TableName(), // cursor
+	},
+	DomainTypes: []string{plugin.DOMAIN_TYPE_TICKET},
 }
 
 type (
@@ -52,11 +67,14 @@ func ConvertIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 	db := taskCtx.GetDal()
 	data := taskCtx.GetData().(*OpsgenieTaskData)
 
+	// Correlates responder id with it's user or team name
 	cursor, err := db.Cursor(
-		dal.Select("incidents.*, responders.*, assignments.*"),
+		dal.Select("incidents.*, responders.id, responders.type, users.full_name, teams.name"),
 		dal.From("_tool_opsgenie_incidents AS incidents"),
 		dal.Join(`LEFT JOIN _tool_opsgenie_assignments AS assignments ON assignments.incident_id = incidents.id`),
 		dal.Join(`LEFT JOIN _tool_opsgenie_responders AS responders ON assignments.responder_id = responders.id`),
+		dal.Join(`LEFT JOIN _tool_opsgenie_users AS users ON users.id = responders.id`),
+		dal.Join(`LEFT JOIN _tool_opsgenie_teams AS teams ON teams.id = responders.id`),
 		dal.Where("incidents.connection_id = ? AND incidents.service_id = ?", data.Options.ConnectionId, data.Options.ServiceId),
 	)
 
@@ -81,7 +99,6 @@ func ConvertIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 			incident := combined.Incident
 			status := getStatus(&incident)
 			leadTime, resolutionDate := getTimes(&incident)
-
 			domainIssue := &ticket.Issue{
 				DomainEntity: domainlayer.DomainEntity{
 					Id: idGen.Generate(data.Options.ConnectionId, incident.Id),
@@ -101,9 +118,17 @@ func ConvertIncidents(taskCtx plugin.SubTaskContext) errors.Error {
 			}
 			var result []interface{}
 			if combined.Responder != nil {
+				var assigneeName string
+				if combined.Responder.Type == "user" {
+					assigneeName = combined.Responder.FullName
+				}
+				if combined.Responder.Type == "team" {
+					assigneeName = combined.Responder.Name
+				}
 				issueAssignee := &ticket.IssueAssignee{
-					IssueId:    domainIssue.Id,
-					AssigneeId: combined.Responder.Id,
+					IssueId:      domainIssue.Id,
+					AssigneeId:   combined.Responder.Id,
+					AssigneeName: resolve(&assigneeName),
 				}
 				result = append(result, issueAssignee)
 			}

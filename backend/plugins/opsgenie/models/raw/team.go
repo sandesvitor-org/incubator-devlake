@@ -15,21 +15,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package models
+package raw
 
-import (
-	"github.com/apache/incubator-devlake/core/models/common"
-)
-
-type Responder struct {
-	common.NoPKModel
-	ConnectionId uint64 `gorm:"primaryKey"`
-	Id           string `gorm:"primaryKey;autoIncrement:false"`
-	Type         string
-	FullName     string
-	Name         string
-}
-
-func (Responder) TableName() string {
-	return "_tool_opsgenie_responders"
+type Team struct {
+	Id          *string `json:"id"`
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+	Links       *struct {
+		Web *string `json:"web"`
+		API *string `json:"api"`
+	} `json:"links"`
 }
