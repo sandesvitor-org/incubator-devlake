@@ -21,7 +21,6 @@ import { ConnectionEndpoint } from './endpoint';
 import { ConnectionUsername } from './username';
 import { ConnectionPassword } from './password';
 import { ConnectionToken } from './token';
-import { ConnectionGenieKey } from './genie-key';
 import { ConnectionProxy } from './proxy';
 import { ConnectionRateLimit } from './rate-limit';
 import { ConnectionAppId } from './app-id';
@@ -77,8 +76,6 @@ export const Form = ({ name, fields, initialValues, values, errors, setValues, s
           return <ConnectionPassword key={key} {...getProps('password')} {...field} />;
         case 'token':
           return <ConnectionToken key={key} {...getProps('token')} {...field} />;
-        case 'genieKey':
-          return <ConnectionGenieKey key={key} {...getProps('genieKey')} {...field} />;
         case 'appId':
           return <ConnectionAppId key={key} {...getProps('appId')} {...field} />;
         case 'secretKey':

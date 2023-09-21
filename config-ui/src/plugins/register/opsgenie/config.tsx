@@ -23,6 +23,7 @@ import { PluginType } from '../../types';
 import { ExternalLink } from '@/components';
 
 import Icon from './assets/icon.png';
+import { Endpoint } from './connection-fields';
 
 export const OpsgenieConfig: PluginConfigType = {
   type: PluginType.Connection,
@@ -31,25 +32,25 @@ export const OpsgenieConfig: PluginConfigType = {
   icon: Icon,
   sort: 8,
   connection: {
-    docLink: DOC_URL.PLUGIN.OPSGENIE.BASIS, // TODO
+    docLink: DOC_URL.PLUGIN.OPSGENIE.BASIS,
     initialValues: {
       endpoint: 'https://api.opsgenie.com/',
     },
     fields: [
       'name',
-      {
-        key: 'endpoint',
-        multipleVersions: {
-          cloud: 'https://api.opsgenie.com/',
-          server: '',
-        },
-      },
+      ({ initialValues, values, setValues }: any) => (
+        <Endpoint
+          initialValue={initialValues.endpoint ?? ''}
+          value={values.endpoint ?? ''}
+          setValue={(value) => setValues({ endpoint: value })}
+        />
+      ),
       {
         key: 'token',
         label: 'Opsgenie API Key',
         subLabel: (
           <ExternalLink link={DOC_URL.PLUGIN.OPSGENIE.API_KEY}>
-            Learn how to create a personal API Key
+            Learn how to create a Atlassian Opsgenie personal API Key
           </ExternalLink>
         ),
       },
@@ -57,10 +58,10 @@ export const OpsgenieConfig: PluginConfigType = {
       {
         key: 'rateLimitPerHour',
         subLabel:
-          'By default, DevLake uses 10,000 requests/hour for data collection for PagerDuty. But you can adjust the collection speed by setting up your desirable rate limit.',
+          'By default, DevLake uses 6,000 requests/hour for data collection for Opsgenie. But you can adjust the collection speed by setting up your desirable rate limit.',
         learnMore: DOC_URL.PLUGIN.OPSGENIE.RATE_LIMIT,
-        externalInfo: 'Opsgenie does not specify a maximum value of rate limit.',
-        defaultValue: 750,
+        externalInfo: 'Opsgenie rate limit is based on number of users and domains.',
+        defaultValue: 6000,
       },
     ],
   },
