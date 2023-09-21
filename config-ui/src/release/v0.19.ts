@@ -76,8 +76,8 @@ const URLS = {
     },
     OPSGENIE: {
       BASIS: 'https://devlake.apache.org/docs/v0.19/Configuration/Opsgenie',
-      RATE_LIMIT: 'https://devlake.apache.org/docs/v0.19/Configuration/Opsgenie/#custom-rate-limit-optional',
-      API_KEY: 'https://devlake.apache.org/docs/v0.19/Configuration/Opsgenie#api-key',
+      RATE_LIMIT: 'https://devlake.apache.org/docs/v0.19/Configuration/Opsgenie/#fixed-rate-limit-optional',
+      API_KEY: 'https://devlake.apache.org/docs/v0.19/Configuration/Opsgenie#api-access-key',
     },
     SONARQUBE: {
       BASIS: 'https://devlake.apache.org/docs/v0.19/Configuration/SonarQube',
